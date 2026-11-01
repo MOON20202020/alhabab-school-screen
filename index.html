@@ -328,6 +328,7 @@
   #media img, #media video { width: 100%; height: 100%; object-fit: contain; display: block; }
   #media iframe { width: 100%; height: 100%; border: 0; display: block; }
   #media .m-loading { color: #fff; font-size: 40px; font-family: var(--f); }
+  .sound-hint { position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); z-index: 12; background: rgba(0,0,0,.75); color: #fff; font-family: var(--f); font-size: 26px; font-weight: 700; padding: 12px 28px; border-radius: 999px; }
   .demo-tag { position: absolute; left: 690px; top: 44px; z-index: 6; background: var(--c-orange); color: #fff; font-size: 22px; font-weight: 700; padding: 4px 16px; border-radius: 999px; }
   .offline { position: absolute; left: 24px; bottom: 96px; background: var(--c-fg); color: #fff; font-size: 18px; padding: 8px 16px; border-radius: 999px; z-index: 5; }
   .setup-msg { position: absolute; inset: 0; z-index: 20; background: var(--c-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; line-height: 1.6; text-align: center; padding: 80px; box-sizing: border-box; }
@@ -1812,7 +1813,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-01-v2';
+var APP_VERSION = '2026-11-01-v3';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2248,11 +2249,11 @@ function mediaSource(item) {
 var mode = 'main', mainUntil = 0, mediaIdx = 0, mediaUntil = 0, mediaKey = '';
 function mainSeconds() { var v = parseInt(data.settings.mainSeconds, 10); return v > 4 ? v : 60; }
 function hideMedia() {
-  var box = el('media'); box.classList.remove('on'); mediaKey = ''; clearInterval(playMedia._pg);
+  var box = el('media'); box.classList.remove('on'); mediaKey = ''; clearInterval(playMedia._pg); showSoundHint(false);
   setTimeout(function () { if (!mediaKey) { box.classList.remove('show'); box.innerHTML = ''; } }, 600);
 }
 function playMedia(item, loop) {
-  var box = el('media'), src = mediaSource(item), now = Date.now(), node, sound = !!data.settings.sound, dur = parseInt(item.dur, 10) || 0;
+  var box = el('media'), src = mediaSource(item), now = Date.now(), node, sound = item.sound !== false, dur = parseInt(item.dur, 10) || 0;
   mediaKey = item._id + '|' + (item.url || '') + '|' + loop;
   box.innerHTML = '';
   clearInterval(playMedia._pg);
@@ -2277,11 +2278,13 @@ function playMedia(item, loop) {
       v.onerror = function () { if (!loop) nextMedia(); else { box.innerHTML = '<div class="m-loading">تعذر تشغيل هذا الفيديو على الشاشة. جرّب رفعه بصيغة MP4</div>'; } };
       if (!loop) mediaUntil = dur ? Date.now() + dur * 1000 : Date.now() + 15 * 60 * 1000;
       box.innerHTML = ''; box.appendChild(v);
-      try { var pr = v.play(); if (pr && pr.catch) pr.catch(function () { v.muted = true; v.play(); }); } catch (e) {}
+      tryPlay(v, sound);
     }).catch(function () { if (!loop) nextMedia(); else node.textContent = 'تعذر تحميل الفيديو'; });
   } else if (src.kind === 'youtube') {
     node = document.createElement('iframe'); node.allow = 'autoplay; encrypted-media';
-    node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound ? 0 : 1);
+    node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound && audioUnlocked ? 0 : 1);
+    node.dataset.want = sound ? '1' : '0';
+    if (sound && !audioUnlocked) showSoundHint(true);
     mediaUntil = loop ? 0 : now + (dur || 60) * 1000;
   } else if (src.kind === 'video') {
     node = document.createElement('video');
@@ -2289,7 +2292,7 @@ function playMedia(item, loop) {
     node.onended = function () { if (!loop) nextMedia(); };
     node.onerror = function () { if (!loop) nextMedia(); };
     mediaUntil = loop ? 0 : (dur ? now + dur * 1000 : now + 15 * 60 * 1000);
-    try { var pr = node.play(); if (pr && pr.catch) pr.catch(function () { node.muted = true; node.play(); }); } catch (e) {}
+    tryPlay(node, sound);
   } else if (src.kind === 'drive') {
     node = new Image(); node.src = 'https://lh3.googleusercontent.com/d/' + src.id;
     node.onerror = function () {
@@ -2306,7 +2309,28 @@ function playMedia(item, loop) {
   box.appendChild(node); box.classList.add('show');
   setTimeout(function () { box.classList.add('on'); }, 30);
 }
-var fileCache = {};
+var fileCache = {}, audioUnlocked = false;
+/* المتصفحات تمنع تشغيل الصوت تلقائيًا قبل أي ضغطة. نجرب بالصوت، وإذا مُنع نشغل بدون صوت ونطلب ضغطة واحدة */
+function tryPlay(v, wantSound) {
+  v.dataset.want = wantSound ? '1' : '0'; v.muted = !wantSound;
+  var pr; try { pr = v.play(); } catch (e) {}
+  if (pr && pr.catch) pr.catch(function () {
+    v.muted = true; v.play().catch(function () {});
+    if (wantSound) showSoundHint(true);
+  });
+}
+function showSoundHint(on) {
+  var hEl = el('soundHint');
+  if (!hEl) { hEl = document.createElement('div'); hEl.id = 'soundHint'; hEl.className = 'sound-hint'; hEl.textContent = 'الصوت مكتوم: اضغط OK في الريموت أو المس الشاشة لتشغيله'; el('stage').appendChild(hEl); }
+  hEl.hidden = !on;
+}
+function unlockAudio() {
+  audioUnlocked = true; showSoundHint(false);
+  var v = document.querySelector('#media video'); if (v && v.muted && v.dataset.want === '1') { v.muted = false; v.play().catch(function () {}); }
+  var yt = document.querySelector('#media iframe'); if (yt && yt.dataset.want === '1' && /mute=1/.test(yt.src)) yt.src = yt.src.replace('mute=1', 'mute=0');
+}
+document.addEventListener('pointerdown', function () { if (!isAdmin) unlockAudio(); }, true);
+document.addEventListener('keydown', function () { if (!isAdmin) unlockAudio(); }, true);
 function b64ToBytes(b) { var bin = atob(b), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
 function loadFileVideo(id, mime) {
   if (fileCache[id]) return fileCache[id];
@@ -2591,6 +2615,7 @@ var PANELS = {
       ];
       if (!src && !it.file) fields.push(field('رابط الفيديو', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://youtube.com/…' }));
       fields.push(field(it.pages ? 'ثواني لكل صفحة' : (src ? 'المدة بالثواني في العرض التلقائي' : 'المدة بالثواني (فاضي = لين يخلص)'), it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }));
+      if (it.file || it.url) fields.push(toggle('بالصوت', it.sound !== false, function (v) { save(p + '/sound', v); }));
       fields.push(toggle('ضمن العرض التلقائي', it.show !== false, function (v) { save(p + '/show', v); }));
       if (live) fields.push(h('button', { class: 'btn stop full', type: 'button', text: '■ إيقاف الآن', onclick: function () {
         ref(p).update({ pin: false, pinUntil: null }).then(function () { toast('توقف العرض ورجعت الشاشة الرئيسية'); render(); });
@@ -2749,8 +2774,7 @@ var PANELS = {
       h('div', { class: 'card' }, [
         h('h3', { text: 'التوقيت' }),
         field('كل كم ثانية يتبدل الإعلان', s.annSeconds, function (v) { save('settings/annSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 3 }),
-        field('كم ثانية تبقى الشاشة الرئيسية قبل العرض الكامل', s.mainSeconds, function (v) { save('settings/mainSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 5 }),
-        toggle('تشغيل صوت الفيديو', !!s.sound, function (v) { save('settings/sound', v); })
+        field('كم ثانية تبقى الشاشة الرئيسية قبل العرض الكامل', s.mainSeconds, function (v) { save('settings/mainSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 5 })
       ]),
       h('div', { class: 'card' }, [
         h('h3', { text: 'معاينة' }),
