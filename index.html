@@ -161,6 +161,93 @@
   @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
 
+
+  /* ================= الحركة والتفاعل ================= */
+  /* خلفية حيّة: دوائر ملوّنة تتحرك ببطء */
+  .blobs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  .blobs i { position: absolute; border-radius: 50%; opacity: .16; will-change: transform; }
+  .blobs i:nth-child(1) { width: 520px; height: 520px; background: var(--c-primary); top: -160px; right: 30%; animation: drift1 38s ease-in-out infinite alternate; }
+  .blobs i:nth-child(2) { width: 420px; height: 420px; background: var(--c-pink); bottom: -140px; left: 8%; animation: drift2 44s ease-in-out infinite alternate; }
+  .blobs i:nth-child(3) { width: 360px; height: 360px; background: var(--c-sky); top: 30%; left: 34%; animation: drift3 50s ease-in-out infinite alternate; }
+  .blobs i:nth-child(4) { width: 300px; height: 300px; background: var(--c-yellow); top: 12%; left: -90px; animation: drift2 36s ease-in-out infinite alternate-reverse; opacity: .22; }
+  @keyframes drift1 { to { transform: translate(-260px, 160px) scale(1.15); } }
+  @keyframes drift2 { to { transform: translate(220px, -180px) scale(.9); } }
+  @keyframes drift3 { to { transform: translate(-200px, -120px) scale(1.2); } }
+  #stage header, #stage main, #stage footer { position: relative; z-index: 1; }
+
+  /* دخول الأقسام عند التشغيل */
+  #stage header > *, .side, .ann, .honor, .events, .sched { animation: enter .9s cubic-bezier(.34,1.56,.64,1) both; }
+  #stage header > *:nth-child(2) { animation-delay: .1s; }
+  .side { animation-delay: .15s; } .ann { animation-delay: .3s; } .honor { animation-delay: .45s; } .events { animation-delay: .55s; } .sched { animation-delay: .7s; }
+  .per { animation: enter .7s cubic-bezier(.34,1.56,.64,1) both; }
+  .per:nth-child(1){animation-delay:.8s}.per:nth-child(2){animation-delay:.85s}.per:nth-child(3){animation-delay:.9s}.per:nth-child(4){animation-delay:.95s}.per:nth-child(5){animation-delay:1s}.per:nth-child(6){animation-delay:1.05s}.per:nth-child(7){animation-delay:1.1s}.per:nth-child(8){animation-delay:1.15s}.per:nth-child(9){animation-delay:1.2s}.per:nth-child(10){animation-delay:1.25s}
+  .per.settled { animation: none; }
+  @keyframes enter { from { opacity: 0; transform: translateY(40px) scale(.94); } to { opacity: 1; transform: none; } }
+
+  /* الساعة: النقطتان تنبضان، والرقم يقفز عند تغيّر الدقيقة */
+  #time { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+  .clock .colon { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+  #time.flip { animation: flip .6s cubic-bezier(.34,1.56,.64,1); display: inline-block; }
+  @keyframes flip { from { transform: translateY(-30px) scale(.9); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* «الآن»: نقطة بث مباشر */
+  .now-label::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--c-red); margin-left: 10px; vertical-align: middle; animation: live 1.6s ease-out infinite; }
+  @keyframes live { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,.55); } 100% { box-shadow: 0 0 0 14px rgba(220,38,38,0); } }
+  .meter i { background-image: repeating-linear-gradient(-45deg, rgba(255,255,255,.28) 0 10px, transparent 10px 20px); background-size: 28px 28px; animation: stripes 1s linear infinite; }
+  @keyframes stripes { to { background-position: 28px 0; } }
+  .side.pop .now-name { animation: pop2 .9s cubic-bezier(.34,1.56,.64,1); }
+  @keyframes pop2 { 0% { transform: scale(.7); opacity: 0; } 100% { transform: none; opacity: 1; } }
+
+  /* الإعلان: انزلاق، تكبير بطيء للصورة، وشريط تقدّم مثل القصص */
+  .ann-text { transition: opacity .5s, transform .5s cubic-bezier(.2,.8,.2,1); }
+  .ann-text.fade { opacity: 0; transform: translateX(-60px); }
+  .ann-img { transition: opacity .5s, transform .6s cubic-bezier(.2,.8,.2,1); }
+  .ann-img.fade { opacity: 0; transform: scale(.92); }
+  .ann-img img { animation: kenburns 16s ease-in-out infinite alternate; }
+  @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.12) translate(-2%, -2%); } }
+  .dot { position: relative; overflow: hidden; width: 44px; height: 10px; }
+  .dot.on { width: 90px; background: var(--c-muted); }
+  .dot.on::after { content: ''; position: absolute; inset: 0; background: var(--c-primary); border-radius: inherit; transform-origin: right; animation: fillbar var(--d, 12s) linear forwards; }
+  @keyframes fillbar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .ann-text::before { animation: wiggle 4s ease-in-out infinite; }
+  @keyframes wiggle { 0%, 86%, 100% { transform: rotate(0); } 90% { transform: rotate(-6deg); } 94% { transform: rotate(5deg); } }
+
+  /* طالب الأسبوع: لمعة تمرّ على البطاقة ونجوم تتلألأ */
+  .honor { position: relative; overflow: hidden; }
+  .honor::after { content: ''; position: absolute; top: -20%; bottom: -20%; width: 120px; left: -160px; background: rgba(255,255,255,.45); transform: skewX(-20deg); animation: shine 7s ease-in-out infinite; }
+  @keyframes shine { 0%, 70% { left: -160px; } 100% { left: 120%; } }
+  .avatar { animation: bob 4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-6px) rotate(-3deg); } }
+  .spark { position: absolute; width: 16px; height: 16px; background: #fff; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: twinkle 2.4s ease-in-out infinite; z-index: 2; }
+  .spark.s1 { top: 18px; left: 24px; } .spark.s2 { bottom: 22px; left: 120px; width: 11px; height: 11px; animation-delay: .8s; } .spark.s3 { top: 70px; right: 20px; width: 12px; height: 12px; animation-delay: 1.6s; }
+  @keyframes twinkle { 0%, 100% { transform: scale(0) rotate(0); opacity: 0; } 50% { transform: scale(1) rotate(90deg); opacity: 1; } }
+
+  /* الفعاليات: القريبة تهتز، والقائمة تدخل بالتتابع */
+  .ev { animation: enter .6s cubic-bezier(.34,1.56,.64,1) both; }
+  .ev:nth-child(2) { animation-delay: .1s; } .ev:nth-child(3) { animation-delay: .2s; }
+  .days.soon { animation: jiggle 3s ease-in-out infinite; }
+  @keyframes jiggle { 0%, 80%, 100% { transform: none; } 85% { transform: rotate(-8deg) scale(1.08); } 90% { transform: rotate(7deg) scale(1.08); } 95% { transform: rotate(-4deg); } }
+
+  /* الجدول: الحصة الحالية تطفو */
+  .per.now { animation: floaty 2.6s ease-in-out infinite !important; }
+  @keyframes floaty { 0%, 100% { transform: translateY(-6px); } 50% { transform: translateY(-12px); } }
+
+  /* الباركود وشريط الأخبار */
+  .qr { animation: breathe 3.5s ease-in-out infinite; }
+  @keyframes breathe { 50% { transform: scale(1.05); } }
+  .news-tag { animation: tagpulse 2s ease-in-out infinite; }
+  @keyframes tagpulse { 50% { transform: scale(1.08); } }
+
+  /* احتفال عند بداية حصة جديدة */
+  .confetti { position: absolute; inset: 0; pointer-events: none; z-index: 30; overflow: hidden; }
+  .confetti i { position: absolute; top: -30px; width: 14px; height: 22px; border-radius: 3px; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translate(var(--x), 1160px) rotate(var(--r)); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blobs i, #stage header > *, .side, .ann, .honor, .events, .sched, .per, .ev, .avatar, .spark, .honor::after, .qr, .news-tag, .days.soon, .per.now, .ann-img img, .clock .colon, .meter i, .ann-text::before, .now-label::before { animation: none !important; }
+    .confetti { display: none; }
+  }
   #media { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; z-index: 10; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity .6s; }
   #media.show { display: flex; }
   #media.on { opacity: 1; }
@@ -230,6 +317,7 @@
 <!-- ================= شاشة العرض ================= -->
 <div id="tv" hidden>
 <div id="stage">
+  <div class="blobs" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
   <header>
     <div class="brand">
       <div class="logo" id="logo">ح</div>
@@ -272,6 +360,7 @@
     </section>
     <aside>
       <section class="honor">
+        <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span>
         <h2 class="honor-title">طالب الأسبوع</h2>
         <div class="avatar" id="avatar"></div>
         <div class="honor-info">
@@ -1758,22 +1847,47 @@ function showAnn(i, instant) {
     img.innerHTML = '';
     if (a.img) { var im = new Image(); im.src = a.img; im.alt = ''; img.appendChild(im); img.style.display = ''; el('ann').className = 'ann'; }
     else { img.style.display = 'none'; el('ann').className = 'ann noimg'; }
-    var dots = el('dots'); dots.innerHTML = '';
+    var dots = el('dots'); dots.innerHTML = ''; var ds = parseInt(data.settings.annSeconds, 10); dots.style.setProperty('--d', (ds > 2 ? ds : 12) + 's');
     if (data.ann.length > 1) data.ann.forEach(function (_, k) { var d = document.createElement('span'); d.className = 'dot' + (k === i ? ' on' : ''); dots.appendChild(d); });
     txt.classList.remove('fade'); img.classList.remove('fade');
   }
   if (instant) apply(); else { txt.classList.add('fade'); img.classList.add('fade'); setTimeout(apply, 500); }
 }
-function nextAnn() {
-  if (data.ann.length > 1) { annIndex = (annIndex + 1) % data.ann.length; showAnn(annIndex); }
-  var sec = parseInt(data.settings.annSeconds, 10);
-  setTimeout(nextAnn, (sec > 2 ? sec : 12) * 1000);
+var annTimer = null;
+function scheduleAnn() { clearTimeout(annTimer); var sec = parseInt(data.settings.annSeconds, 10); annTimer = setTimeout(nextAnn, (sec > 2 ? sec : 12) * 1000); }
+function stepAnn(d) { if (data.ann.length > 1) { annIndex = (annIndex + d + data.ann.length) % data.ann.length; showAnn(annIndex); } scheduleAnn(); }
+function nextAnn() { stepAnn(1); }
+/* التفاعل بالريموت أو الكيبورد: الأسهم تقلّب الإعلانات */
+document.addEventListener('keydown', function (e) {
+  if (isAdmin) return;
+  if (e.key === 'ArrowLeft') stepAnn(1);
+  else if (e.key === 'ArrowRight') stepAnn(-1);
+});
+/* احتفال صغير عند بداية حصة جديدة */
+function celebrate() {
+  try { if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+  var box = document.createElement('div'); box.className = 'confetti';
+  var cols = ['#4F46E5', '#EA580C', '#FACC15', '#0284C7', '#15803D', '#DB2777', '#DC2626'];
+  for (var k = 0; k < 70; k++) {
+    var c = document.createElement('i');
+    c.style.left = (Math.random() * 100) + '%';
+    c.style.background = cols[k % cols.length];
+    c.style.setProperty('--x', (Math.random() * 300 - 150) + 'px');
+    c.style.setProperty('--r', (Math.random() * 1080 - 540) + 'deg');
+    c.style.animationDuration = (2.2 + Math.random() * 1.8) + 's';
+    c.style.animationDelay = (Math.random() * .6) + 's';
+    box.appendChild(c);
+  }
+  el('stage').appendChild(box);
+  setTimeout(function () { box.remove(); }, 5000);
+  var sd = document.querySelector('.side'); sd.classList.remove('pop'); void sd.offsetWidth; sd.classList.add('pop');
 }
 
 function tick() {
   var real = new Date(), n = nowLocal();
   var h = n.getUTCHours(), m = n.getUTCMinutes();
-  el('time').textContent = ar((h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m);
+  var tstr = ar(h % 12 || 12) + '<span class="colon">:</span>' + ar((m < 10 ? '0' : '') + m);
+  if (tick._t !== tstr) { var te = el('time'); te.innerHTML = tstr; if (tick._t) { te.classList.remove('flip'); void te.offsetWidth; te.classList.add('flip'); } tick._t = tstr; }
   el('ampm').textContent = h < 12 ? 'ص' : 'م';
   try {
     el('greg').textContent = new Intl.DateTimeFormat('ar-OM-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
@@ -1782,15 +1896,27 @@ function tick() {
 
   var nowMin = h * 60 + m + n.getUTCSeconds() / 60;
   var weekend = WEEKEND.indexOf(n.getUTCDay()) !== -1;
-  var box = el('periods'); box.innerHTML = '';
+  var box = el('periods');
   var curIdx = -1, nextIdx = -1;
   data.sched.forEach(function (p, i) {
     var a = toMin(p[1]), b = toMin(p[2]);
     if (!weekend && nowMin >= a && nowMin < b) curIdx = i;
     if (!weekend && nextIdx === -1 && nowMin < a) nextIdx = i;
   });
+  var states = data.sched.map(function (p, i) {
+    var b = toMin(p[2]);
+    if (weekend) return 'w';
+    if (i === curIdx) return 'now';
+    if (nowMin >= b) return 'done';
+    if (i === nextIdx && curIdx === -1) return 'next';
+    return 'up';
+  });
+  var key = JSON.stringify(data.sched) + states.join(',');
+  if (tick._key !== key) { // نعيد بناء الجدول فقط عند تغيّر الحالة، حتى لا تتكرر الحركة كل ثانية
+  var changedPeriod = tick._key && tick._cur !== curIdx && curIdx !== -1;
+  tick._key = key; tick._cur = curIdx; box.innerHTML = '';
   data.sched.forEach(function (p, i) {
-    var a = toMin(p[1]), b = toMin(p[2]), cls = 'per', badge;
+    var a = toMin(p[1]), b = toMin(p[2]), cls = 'per' + (tick._settled ? ' settled' : ''), badge;
     if (weekend) badge = '';
     else if (i === curIdx) { cls += ' now'; badge = 'الآن'; }
     else if (nowMin >= b) { cls += ' done'; badge = 'انتهت'; }
@@ -1803,6 +1929,11 @@ function tick() {
     if (i === curIdx) { var bar = document.createElement('div'); bar.className = 'bar'; bar.style.width = Math.round((nowMin - a) / (b - a) * 100) + '%'; d.appendChild(bar); }
     box.appendChild(d);
   });
+  if (changedPeriod) celebrate();
+  } else if (curIdx !== -1) {
+    var cb = box.querySelector('.per.now .bar'), ca = toMin(data.sched[curIdx][1]), cz = toMin(data.sched[curIdx][2]);
+    if (cb) cb.style.width = Math.round((nowMin - ca) / (cz - ca) * 100) + '%';
+  }
   var first = toMin(data.sched[0][1]), last = toMin(data.sched[data.sched.length - 1][2]), status = '';
   if (weekend) status = 'إجازة نهاية الأسبوع';
   else if (curIdx !== -1) { var nm = data.sched[curIdx][0]; status = 'باقي ' + ar(Math.ceil(toMin(data.sched[curIdx][2]) - nowMin)) + ' دقيقة على نهاية ' + (/الاستراحة|الطابور/.test(nm) ? nm : 'الحصة ' + nm); }
@@ -1930,7 +2061,8 @@ function startTV() {
   fit(); window.addEventListener('resize', fit);
   drawQR(); renderStatic(); tick();
   setInterval(tick, 1000); setInterval(mediaTick, 1000);
-  setTimeout(nextAnn, 12000);
+  scheduleAnn();
+  setTimeout(function () { document.querySelectorAll('.per').forEach(function (p) { p.classList.add('settled'); }); tick._settled = true; }, 2200);
   setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
   if (!db) { // بدون إعداد: رسالة. بدون إنترنت وقت التشغيل: آخر محتوى محفوظ، ونعيد المحاولة بعد دقيقة
