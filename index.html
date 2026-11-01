@@ -1812,6 +1812,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
+var APP_VERSION = '2026-11-01-v2';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2273,7 +2274,7 @@ function playMedia(item, loop) {
       var v = document.createElement('video');
       v.src = url; v.autoplay = true; v.muted = !sound; v.playsInline = true; v.loop = !!loop;
       v.onended = function () { if (!loop) nextMedia(); };
-      v.onerror = function () { if (!loop) nextMedia(); };
+      v.onerror = function () { if (!loop) nextMedia(); else { box.innerHTML = '<div class="m-loading">تعذر تشغيل هذا الفيديو على الشاشة. جرّب رفعه بصيغة MP4</div>'; } };
       if (!loop) mediaUntil = dur ? Date.now() + dur * 1000 : Date.now() + 15 * 60 * 1000;
       box.innerHTML = ''; box.appendChild(v);
       try { var pr = v.play(); if (pr && pr.catch) pr.catch(function () { v.muted = true; v.play(); }); } catch (e) {}
@@ -2315,7 +2316,8 @@ function loadFileVideo(id, mime) {
     snap.forEach(function (ch) { keys.push(+ch.key); parts[+ch.key] = ch.val(); });
     if (!keys.length) throw new Error('empty');
     var blobs = parts.map(b64ToBytes);
-    return URL.createObjectURL(new Blob(blobs, { type: mime }));
+    var t = /quicktime|x-m4v|^$/i.test(mime || '') ? 'video/mp4' : mime;
+    return URL.createObjectURL(new Blob(blobs, { type: t }));
   });
   fileCache[id].catch(function () { delete fileCache[id]; });
   return fileCache[id];
@@ -2368,6 +2370,12 @@ function startTV() {
   setTimeout(function () { document.body.classList.add('ready'); }, 3000);
   setTimeout(function () { document.querySelectorAll('.per').forEach(function (p) { p.classList.add('settled'); }); tick._settled = true; }, 2200);
   setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
+  setInterval(function () { // تحديث تلقائي: إذا نزل إصدار جديد من الشاشة، تعيد تحميل نفسها
+    if (mode !== 'main') return;
+    fetch(location.pathname + '?ver=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
+      var m = t.match(/var APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) location.reload();
+    }).catch(function () {});
+  }, 3 * 60 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
   if (!db) { // بدون إعداد: رسالة. بدون إنترنت وقت التشغيل: آخر محتوى محفوظ، ونعيد المحاولة بعد دقيقة
     if (!FIREBASE_CONFIG) el('demoTag').hidden = false;
