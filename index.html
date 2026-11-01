@@ -162,6 +162,7 @@
   #media.on { opacity: 1; }
   #media img, #media video { width: 100%; height: 100%; object-fit: contain; display: block; }
   #media iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .demo-tag { position: absolute; left: 690px; top: 44px; z-index: 6; background: var(--c-orange); color: #fff; font-size: 22px; font-weight: 700; padding: 4px 16px; border-radius: 999px; }
   .offline { position: absolute; left: 24px; bottom: 96px; background: var(--c-fg); color: #fff; font-size: 18px; padding: 8px 16px; border-radius: 999px; z-index: 5; }
   .setup-msg { position: absolute; inset: 0; z-index: 20; background: var(--c-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; line-height: 1.6; text-align: center; padding: 80px; box-sizing: border-box; }
 
@@ -290,6 +291,7 @@
   </footer>
   <div class="offline" id="offline" hidden>بدون اتصال · يعرض آخر محتوى محفوظ</div>
   <div id="media"></div>
+  <div class="demo-tag" id="demoTag" hidden>وضع تجريبي</div>
   <div class="setup-msg" id="setupMsg" hidden>النظام يحتاج إعداد Firebase أولًا.<br>افتح هذا الرابط من الجوال وأضف في آخره ‎#admin</div>
 </div>
 </div>
@@ -1624,6 +1626,23 @@ var DEFAULT = {
   media: {}
 };
 
+
+var DEMO = {
+  settings: {},
+  ann: {
+    a1: { t: 'انطلاق المسابقة الثقافية', b: 'تبدأ التصفيات الأولى للمسابقة الثقافية يوم الثلاثاء في مركز مصادر التعلم. سجّل اسمك لدى معلم الصف.', show: true },
+    a2: { t: 'أسبوع القراءة', b: 'استعر كتابًا من مكتبة المدرسة هذا الأسبوع، وشارك ملخصه مع زملائك في الإذاعة الصباحية.', show: true }
+  },
+  news: { n1: { t: 'تهنئة لفريق المدرسة بالفوز في بطولة كرة القدم', show: true }, n2: { t: 'موعد اجتماع أولياء الأمور الخميس القادم', show: true } },
+  events: {},
+  honor: { name: 'اسم الطالب', cls: 'العاشر ٢', why: 'التفوق والانضباط' },
+  sched: null, media: {}
+};
+(function () { // فعاليات تجريبية بتواريخ قريبة من اليوم
+  var n = new Date(Date.now() + 4 * 3600000), add = function (d) { var x = new Date(n.getTime() + d * 86400000); return x.toISOString().slice(0, 10); };
+  DEMO.events = { e1: { t: 'اختبار قصير رياضيات', date: add(1), s: 'الصف العاشر' }, e2: { t: 'رحلة علمية', date: add(4), s: 'الساعة ٧ صباحًا' }, e3: { t: 'اليوم الوطني', date: add(17), s: 'الساحة الرئيسية' } };
+})();
+
 var isAdmin = /admin/i.test(location.hash) || /[?&]admin\b/i.test(location.search);
 window.addEventListener('hashchange', function () { location.reload(); });
 var db = null, auth = null;
@@ -1890,6 +1909,7 @@ function startTV() {
   document.body.className = 'tv';
   el('tv').hidden = false;
   try { var saved = localStorage.getItem('school-screen-v2'); if (saved) raw = JSON.parse(saved); } catch (e) {}
+  if (!FIREBASE_CONFIG) raw = DEMO; // وضع تجريبي حتى يتم ربط Firebase
   data = normalize(raw);
   fit(); window.addEventListener('resize', fit);
   drawQR(); renderStatic(); tick();
@@ -1898,7 +1918,7 @@ function startTV() {
   setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
   if (!db) { // بدون إعداد: رسالة. بدون إنترنت وقت التشغيل: آخر محتوى محفوظ، ونعيد المحاولة بعد دقيقة
-    if (!FIREBASE_CONFIG) el('setupMsg').hidden = false;
+    if (!FIREBASE_CONFIG) el('demoTag').hidden = false;
     else { el('offline').hidden = false; setTimeout(function () { location.reload(); }, 60000); }
     return;
   }
