@@ -76,10 +76,16 @@
   .meter i { display: block; height: 18px; width: 0; border-radius: 999px; min-width: 18px; background: var(--c-orange); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); transition: width 1s linear; }
   .meter { background: linear-gradient(#E0E7FF, #E0E7FF) content-box, #fff; background-clip: content-box, border-box; }
   .meter { border-radius: 0 0 26px 26px; }
-  .next-box { margin-top: auto; width: 100%; box-sizing: border-box; border-radius: 26px; background: var(--c-secondary); border: var(--bw) solid #6366F1; box-shadow: var(--clay-c); color: var(--c-fg); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: right; }
-  .next-box .k { font-size: 22px; font-weight: 600; }
-  .next-box .v { font-size: 36px; font-weight: 800; line-height: 1.15; }
-  .next-box .tm { font-size: 34px; font-weight: 800; color: var(--c-fg); background: var(--c-yellow); border-radius: 18px; padding: 4px 16px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* شريط الأسبوع: أيام الدراسة حتى الإجازة */
+  .week { margin-top: auto; width: 100%; box-sizing: border-box; border-radius: 26px; background: var(--c-secondary); border: var(--bw) solid #6366F1; box-shadow: var(--clay-c); color: var(--c-fg); padding: 14px 18px 16px; text-align: right; }
+  .qr-box + .week { margin-top: 20px; }
+  .wk-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .wk-t { font-size: 21px; font-weight: 700; }
+  .wk-top b { font-size: 24px; font-weight: 800; color: var(--c-fg); background: var(--c-yellow); border-radius: 14px; padding: 2px 14px; white-space: nowrap; }
+  .wk-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .wk-d { height: 54px; border-radius: 16px; background: rgba(255,255,255,.45); display: grid; place-items: center; font-size: 19px; font-weight: 800; color: var(--c-primary-d); transition: background .4s, transform .4s; }
+  .wk-d.done { background: var(--c-primary); color: #fff; }
+  .wk-d.today { background: #fff; color: var(--c-orange-d); box-shadow: inset 0 0 0 4px var(--c-orange); transform: translateY(-4px); }
 
   .qr-box { margin-top: auto; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 20px; background: var(--c-card); color: var(--c-fg); border-radius: 26px; padding: 16px 18px; text-align: right; }
   .qr { width: 132px; height: 132px; flex-shrink: 0; background: #fff; border-radius: 14px; }
@@ -379,9 +385,9 @@
         <div class="qr" id="qr" aria-hidden="true"></div>
         <div class="qr-t"><b>لوحة التحكم</b><span>امسح الرمز بكاميرا الجوال</span></div>
       </div>
-      <div class="next-box" id="nextBox">
-        <div><div class="k">التالية</div><div class="v" id="nextName"></div></div>
-        <div class="tm" id="nextTime"></div>
+      <div class="week" id="week">
+        <div class="wk-top"><span class="wk-t">الأسبوع الدراسي</span><b id="wkLeft"></b></div>
+        <div class="wk-days" id="wkDays"></div>
       </div>
     </section>
     <section class="ann" id="ann">
@@ -2098,11 +2104,27 @@ function renderNow(weekend, curIdx, nowMin, first, last) {
   el('nowName').textContent = name;
   el('nowLeft').innerHTML = left;
   el('nowBar').style.width = Math.round(pct * 100) + '%';
-  if (nxt !== -1 && curIdx !== nxt) {
-    el('nextBox').hidden = false;
-    el('nextName').textContent = data.sched[nxt][0];
-    el('nextTime').textContent = fmt12(toMin(data.sched[nxt][1]));
-  } else el('nextBox').hidden = true;
+  renderWeek(nowMin >= last);
+}
+/* ---- الأسبوع الدراسي: من الأحد إلى الخميس، وكم باقي على الإجازة ---- */
+var WEEK_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
+function renderWeek(dayOver) {
+  var d = nowLocal().getUTCDay(), key = d + '|' + dayOver;
+  if (renderWeek._k === key) return; renderWeek._k = key;
+  var box = el('wkDays'); box.innerHTML = '';
+  WEEK_NAMES.forEach(function (nm, k) {
+    var c = document.createElement('div'), cls = 'wk-d';
+    if (d <= 4) { if (k < d || (k === d && dayOver)) cls += ' done'; else if (k === d) cls += ' today'; }
+    else cls += ' done';
+    c.className = cls; c.textContent = nm.replace('ال', ''); box.appendChild(c);
+  });
+  var left = d <= 4 ? 4 - d + (dayOver ? 0 : 1) : 0, t;
+  if (d > 4) t = 'إجازة سعيدة';
+  else if (d === 4) t = dayOver ? 'إجازة سعيدة' : 'آخر يوم!';
+  else if (left === 1) t = 'باقي يوم';
+  else if (left === 2) t = 'باقي يومان';
+  else t = 'باقي ' + ar(left) + ' أيام';
+  el('wkLeft').textContent = t;
 }
 
 /* ---- العرض بملء الشاشة ---- */
