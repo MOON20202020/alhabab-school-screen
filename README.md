@@ -35,6 +35,7 @@
 
 ## مصدر الآيات القرآنية
 
-الآيات المعروضة في بطاقة «حكمة اليوم» (٥٢٢ آية قصيرة مختارة) منقولة حرفيًا دون أي تعديل من:
+الآيات المعروضة في بطاقة «حكمة اليوم» (٥١٤ آية قصيرة مختارة) بالرسم العثماني، منقولة حرفيًا دون أي تعديل، مع تلوين أحكام التجويد:
 
-Tanzil Quran Text (Simple), Copyright (C) 2007-2024 Tanzil Project — Creative Commons Attribution 3.0 — http://tanzil.net
+- نص المصحف: Tanzil Quran Text (Uthmani), Copyright (C) 2007-2024 Tanzil Project — Creative Commons Attribution 3.0 — http://tanzil.net
+- بيانات أحكام التجويد: cpfair/quran-tajweed — Creative Commons Attribution 4.0 — https://github.com/cpfair/quran-tajweed
