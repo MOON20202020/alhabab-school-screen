@@ -344,6 +344,20 @@
   .item-head b { font-size: 15px; }
   .badge { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--ink2); }
   .badge.pin { background: var(--accent); color: var(--navy); font-weight: 700; }
+  .sc-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .sc-item { background: #fff; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: background .6s; }
+  .sc-item.flash { background: #FEF3C7; }
+  .sc-top { display: flex; align-items: center; gap: 6px; }
+  .sc-no { width: 30px; height: 30px; border-radius: 10px; background: var(--bg); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--ink2); flex-shrink: 0; }
+  .sc-top .sc-name { flex: 1; min-width: 0; }
+  .mv { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #C4CCD8; background: #F7F9FB; color: var(--navy); font-size: 20px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+  .mv:disabled { opacity: .35; cursor: default; }
+  .mv:active:not(:disabled) { transform: scale(.94); }
+  .sc-times { display: flex; align-items: center; gap: 6px; }
+  .sc-times label { font-size: 13px; color: var(--ink2); }
+  .sc-times .in { flex: 1; min-width: 0; direction: ltr; text-align: center; padding: 8px 4px; }
+  .sc-dur { font-size: 13px; color: var(--ink2); background: var(--bg); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+  .sc-save { position: sticky; bottom: 12px; z-index: 4; }
   .sched-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 40px; gap: 6px; align-items: center; }
   .sched-row .in { padding: 8px 4px; font-size: 14px; }
   .sched-row input[type=time] { direction: ltr; text-align: center; }
@@ -2444,28 +2458,51 @@ var PANELS = {
   },
   sched: function () {
     var rows = (current.sched && current.sched.length ? current.sched : DEFAULT.sched).map(function (r) { return r.slice(); });
+    var auto = true, dirty = false;
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'الشاشة تظلل الحصة الحالية حسب الوقت. بعد التعديل اضغط حفظ.' }));
-    var list = h('div', { class: 'card' });
-    function draw() {
+    wrap.appendChild(h('p', { class: 'hint', text: 'رتّب الحصص بالأسهم ↑ ↓. عند تفعيل «ضبط الأوقات تلقائيًا» تحافظ كل حصة على مدتها، وتُعاد الأوقات بالترتيب الجديد. بعد التعديل اضغط حفظ.' }));
+    var autoSw = toggle('ضبط الأوقات تلقائيًا عند النقل', true, function (v) { auto = v; });
+    wrap.appendChild(h('div', { class: 'card' }, [autoSw]));
+    var list = h('div', { class: 'sc-list' });
+    function dur(r) { var a = toMin(r[1]), b = toMin(r[2]); return a !== null && b !== null && b > a ? b - a : 40; }
+    function hhmm(m) { m = ((m % 1440) + 1440) % 1440; var hh = Math.floor(m / 60), mm = m % 60; return (hh < 10 ? '0' : '') + hh + ':' + (mm < 10 ? '0' : '') + mm; }
+    function move(i, d) {
+      var j = i + d; if (j < 0 || j >= rows.length) return;
+      if (auto) {
+        // نحفظ الفواصل بين المواقع، ومدة كل حصة، ثم نعيد حساب الأوقات
+        var start = toMin(rows[0][1]);
+        var gaps = rows.map(function (r, k) { return k === 0 ? 0 : Math.max(0, toMin(r[1]) - toMin(rows[k - 1][2])); });
+        var t = rows[i]; rows[i] = rows[j]; rows[j] = t;
+        var cur = start;
+        rows.forEach(function (r, k) { var dd = dur(r); cur += gaps[k]; r[1] = hhmm(cur); r[2] = hhmm(cur + dd); cur += dd; });
+      } else { var t2 = rows[i]; rows[i] = rows[j]; rows[j] = t2; }
+      dirty = true; draw(j);
+    }
+    function draw(flash) {
       list.innerHTML = '';
-      list.appendChild(h('div', { class: 'sched-row', style: 'font-size:13px;color:#4A5A72' }, [h('span', { text: 'الحصة' }), h('span', { text: 'من' }), h('span', { text: 'إلى' }), h('span')]));
       rows.forEach(function (r, i) {
-        var n = h('input', { class: 'in', 'aria-label': 'اسم الحصة' }); n.value = r[0]; n.oninput = function () { r[0] = n.value; };
-        var a = h('input', { class: 'in', type: 'time', 'aria-label': 'من' }); a.value = r[1]; a.oninput = function () { r[1] = a.value; };
-        var b = h('input', { class: 'in', type: 'time', 'aria-label': 'إلى' }); b.value = r[2]; b.oninput = function () { r[2] = b.value; };
-        var d = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'حذف الحصة', text: '×', onclick: function () { rows.splice(i, 1); draw(); } });
-        list.appendChild(h('div', { class: 'sched-row' }, [n, a, b, d]));
+        var n = h('input', { class: 'in sc-name', 'aria-label': 'اسم الحصة ' + (i + 1) }); n.value = r[0]; n.oninput = function () { r[0] = n.value; dirty = true; };
+        var a = h('input', { class: 'in', type: 'time', 'aria-label': 'بداية ' + r[0] }); a.value = r[1]; a.oninput = function () { r[1] = a.value; dirty = true; draw(); };
+        var b = h('input', { class: 'in', type: 'time', 'aria-label': 'نهاية ' + r[0] }); b.value = r[2]; b.oninput = function () { r[2] = b.value; dirty = true; };
+        var up = h('button', { class: 'mv', type: 'button', 'aria-label': 'تقديم ' + r[0], text: '↑', disabled: i === 0, onclick: function () { move(i, -1); } });
+        var dn = h('button', { class: 'mv', type: 'button', 'aria-label': 'تأخير ' + r[0], text: '↓', disabled: i === rows.length - 1, onclick: function () { move(i, 1); } });
+        var del = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'حذف ' + r[0], text: '×', onclick: function () { if (confirm('حذف «' + r[0] + '»؟')) { rows.splice(i, 1); dirty = true; draw(); } } });
+        var item = h('div', { class: 'sc-item' + (flash === i ? ' flash' : '') }, [
+          h('div', { class: 'sc-top' }, [h('span', { class: 'sc-no', text: String(i + 1) }), n, up, dn, del]),
+          h('div', { class: 'sc-times' }, [h('label', { text: 'من' }), a, h('label', { text: 'إلى' }), b, h('span', { class: 'sc-dur', text: dur(r) + ' د' })])
+        ]);
+        list.appendChild(item);
       });
-      list.appendChild(h('button', { class: 'btn ghost', type: 'button', text: '+ إضافة حصة', onclick: function () { var last = rows[rows.length - 1]; rows.push(['حصة', last ? last[2] : '07:00', last ? last[2] : '07:40']); draw(); } }));
+      list.appendChild(h('button', { class: 'btn ghost full', type: 'button', text: '+ إضافة حصة في الآخر', onclick: function () { var last = rows[rows.length - 1], st = last ? toMin(last[2]) + 5 : 420; rows.push(['حصة', hhmm(st), hhmm(st + 40)]); dirty = true; draw(rows.length - 1); } }));
     }
     draw();
     wrap.appendChild(list);
-    wrap.appendChild(h('button', { class: 'btn full', type: 'button', text: 'حفظ الجدول', onclick: function () {
+    var saveBtn = h('button', { class: 'btn gold full sc-save', type: 'button', text: 'حفظ الجدول', onclick: function () {
       var clean = rows.filter(function (r) { return r[0] && toMin(r[1]) !== null && toMin(r[2]) !== null; });
-      clean.sort(function (x, y) { return toMin(x[1]) - toMin(y[1]); });
       save('sched', clean).then(render);
-    } }));
+    } });
+    wrap.appendChild(saveBtn);
+    wrap.appendChild(h('button', { class: 'btn ghost full', type: 'button', text: 'ترتيب حسب الوقت', style: 'margin-top:8px', onclick: function () { rows.sort(function (x, y) { return toMin(x[1]) - toMin(y[1]); }); draw(); } }));
     return wrap;
   },
   settings: function () {
