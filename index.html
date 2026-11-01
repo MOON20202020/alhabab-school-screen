@@ -367,6 +367,12 @@
   .item-head b { font-size: 15px; }
   .badge { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--ink2); }
   .badge.pin { background: var(--accent); color: var(--navy); font-weight: 700; }
+  .now-card { background: #FEF3C7; }
+  .live-card { box-shadow: inset 0 0 0 3px var(--accent); }
+  .mrow { display: flex; gap: 12px; align-items: flex-end; }
+  .mthumb { position: relative; width: 96px; height: 64px; border-radius: 10px; background: #DDE3EC; overflow: hidden; flex-shrink: 0; display: grid; place-items: center; font-size: 13px; color: var(--ink2); }
+  .mthumb img { width: 100%; height: 100%; object-fit: cover; }
+  .mpages { position: absolute; bottom: 3px; right: 3px; background: rgba(0,0,0,.6); color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 6px; }
   .sc-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
   .sc-item { background: #fff; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; transition: background .6s; }
   .sc-item.flash { background: #FEF3C7; }
@@ -1871,7 +1877,7 @@ function normalize(v) {
     events: vals(v.events).filter(function (e) { return e.t; }),
     honor: v.honor || DEFAULT.honor,
     sched: sched,
-    media: vals(v.media).filter(function (m) { return m.url || m.img; }),
+    media: vals(v.media).filter(function (m) { return m.url || m.img || (m.pages && m.pages.length); }),
     best: v.best || {},
     wisdom: vals(v.wisdom).filter(function (w) { return w.show !== false && w.t; }).map(function (w) { return w.t; })
   };
@@ -2215,6 +2221,7 @@ function renderNow(weekend, curIdx, nowMin, first, last) {
 
 /* ---- العرض بملء الشاشة ---- */
 function mediaSource(item) {
+  if (item.pages && item.pages.length) return { kind: 'pages', pages: item.pages };
   if (item.img) return { kind: 'image', src: item.img };
   var url = item.url, m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/);
   if (m) return { kind: 'youtube', id: m[1] };
@@ -2226,14 +2233,24 @@ function mediaSource(item) {
 var mode = 'main', mainUntil = 0, mediaIdx = 0, mediaUntil = 0, mediaKey = '';
 function mainSeconds() { var v = parseInt(data.settings.mainSeconds, 10); return v > 4 ? v : 60; }
 function hideMedia() {
-  var box = el('media'); box.classList.remove('on'); mediaKey = '';
+  var box = el('media'); box.classList.remove('on'); mediaKey = ''; clearInterval(playMedia._pg);
   setTimeout(function () { if (!mediaKey) { box.classList.remove('show'); box.innerHTML = ''; } }, 600);
 }
 function playMedia(item, loop) {
   var box = el('media'), src = mediaSource(item), now = Date.now(), node, sound = !!data.settings.sound, dur = parseInt(item.dur, 10) || 0;
   mediaKey = item._id + '|' + (item.url || '') + '|' + loop;
   box.innerHTML = '';
-  if (src.kind === 'youtube') {
+  clearInterval(playMedia._pg);
+  if (src.kind === 'pages') { // ملف PDF: صفحاته تتقلب بالتتابع
+    var per = dur || 10, pi = 0;
+    node = new Image(); node.src = src.pages[0];
+    if (src.pages.length > 1) playMedia._pg = setInterval(function () {
+      pi++; if (pi >= src.pages.length) { if (!loop) { clearInterval(playMedia._pg); return; } pi = 0; }
+      node.style.opacity = 0; setTimeout(function () { node.src = src.pages[pi]; node.style.opacity = 1; }, 300);
+    }, per * 1000);
+    node.style.transition = 'opacity .3s';
+    mediaUntil = loop ? 0 : now + per * src.pages.length * 1000;
+  } else if (src.kind === 'youtube') {
     node = document.createElement('iframe'); node.allow = 'autoplay; encrypted-media';
     node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound ? 0 : 1);
     mediaUntil = loop ? 0 : now + (dur || 60) * 1000;
@@ -2268,7 +2285,7 @@ function nextMedia() {
 }
 function mediaTick() {
   var now = Date.now();
-  var pinned = data.media.filter(function (m) { return m.pin; })[0];
+  var pinned = data.media.filter(function (m) { return m.pin && (!m.pinUntil || m.pinUntil > now); })[0];
   if (pinned) { if (mediaKey !== pinned._id + '|' + (pinned.url || '') + '|true') { mode = 'pinned'; playMedia(pinned, true); } return; }
   if (mode === 'pinned') { mode = 'main'; mainUntil = now + mainSeconds() * 1000; hideMedia(); return; }
   var list = mediaList();
@@ -2328,7 +2345,7 @@ function startTV() {
    ===================================================== */
 var ref = function (p) { return db.ref('screen' + (p ? '/' + p : '')); };
 var current = {}, activeTab = 'ann';
-var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['best', 'الصف المثالي'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
+var TABS = [['ann', 'الإعلانات'], ['media', 'الملفات والعرض'], ['honor', 'طالب الأسبوع'], ['best', 'الصف المثالي'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
 
 function toast(msg) { var t = el('toast'); t.textContent = msg || 'تم الحفظ'; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1600); }
 function save(path, value) { return ref(path).set(value).then(function () { toast(); }).catch(function (e) { toast('ما انحفظ: ' + (e.code === 'PERMISSION_DENIED' ? 'ما عندك صلاحية' : e.message)); }); }
@@ -2385,6 +2402,53 @@ function imageField(label, value, onSave, max) {
   return h('div', { class: 'fl' }, [h('label', { text: label }), h('div', { class: 'imgbox' }, [pv, pick, rm, file])]);
 }
 
+/* ---- رفع الملفات: صور، وملفات PDF تتحول صفحاتها إلى صور ---- */
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise(function (res, rej) {
+    var sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    sc.onload = function () { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(window.pdfjsLib); };
+    sc.onerror = function () { rej(new Error('ما قدرت أحمّل قارئ PDF')); };
+    document.head.appendChild(sc);
+  });
+}
+function pdfToPages(file, max) {
+  return loadPdfJs().then(function (lib) {
+    return file.arrayBuffer().then(function (buf) { return lib.getDocument({ data: buf }).promise; });
+  }).then(function (pdf) {
+    var n = Math.min(pdf.numPages, max || 25), out = [], k = 0;
+    function next() {
+      k++; if (k > n) return Promise.resolve(out);
+      toast('جاري تجهيز الصفحة ' + k + ' من ' + n);
+      return pdf.getPage(k).then(function (pg) {
+        var v0 = pg.getViewport({ scale: 1 }), sc = Math.min(1600 / v0.width, 1600 / v0.height) * 1, vp = pg.getViewport({ scale: sc });
+        var c = document.createElement('canvas'); c.width = Math.round(vp.width); c.height = Math.round(vp.height);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+        return pg.render({ canvasContext: g, viewport: vp }).promise.then(function () { out.push(c.toDataURL('image/jpeg', 0.72)); return next(); });
+      });
+    }
+    return next().then(function (pages) { if (pdf.numPages > n) toast('عرضت أول ' + n + ' صفحة فقط'); return pages; });
+  });
+}
+function uploadFiles(files) {
+  if (!files.length) return;
+  var chain = Promise.resolve(), done = 0;
+  files.forEach(function (f) {
+    chain = chain.then(function () {
+      var name = f.name.replace(/\.[^.]+$/, '');
+      if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)) {
+        return pdfToPages(f, 25).then(function (pages) { return ref('media').push().set({ label: name, pages: pages, dur: 10, show: false, pin: false }); }).then(function () { done++; });
+      }
+      if (/^image\//.test(f.type)) {
+        toast('جاري رفع ' + name);
+        return resizeImage(f, 1920).then(function (d) { return ref('media').push().set({ label: name, img: d, dur: 15, show: false, pin: false }); }).then(function () { done++; });
+      }
+      toast('نوع ملف غير مدعوم: ' + f.name);
+    }).catch(function (e) { toast('تعذر رفع ' + f.name + ': ' + e.message); });
+  });
+  chain.then(function () { if (done) toast('تم رفع ' + done + (done === 1 ? ' ملف' : ' ملفات')); render(); });
+}
+
 /* ---- قوائم (إعلانات، أخبار، فعاليات، عرض كامل) ---- */
 function listPanel(path, opts) {
   var wrap = h('div');
@@ -2426,20 +2490,51 @@ var PANELS = {
     });
   },
   media: function () {
-    return listPanel('media', {
-      hint: 'صور وفيديوهات تنعرض بملء الشاشة بعد الشاشة الرئيسية. ارفع صورة من جوالك، أو حط رابط يوتيوب أو Google Drive أو رابط فيديو مباشر. "ثبّت الآن" يخليه على الشاشة باستمرار.',
-      addLabel: 'صورة أو فيديو', blank: { label: 'عرض جديد', url: '', img: '', dur: 15, show: true, pin: false },
-      title: function (it) { return it.label || 'بدون اسم'; },
-      badge: function (it) { return h('span', { class: 'badge' + (it.pin ? ' pin' : ''), text: it.pin ? 'مثبّت الآن' : (it.show === false ? 'مخفي' : 'ظاهر') }); },
-      fields: function (it, p) { return [
-        field('الاسم (لك أنت)', it.label, function (v) { save(p + '/label', v); }),
-        imageField('صورة من الجوال', it.img, function (v) { save(p + '/img', v); }, 1920),
-        field('أو رابط (يوتيوب، درايف، فيديو)', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://' }),
-        field('المدة بالثواني (فاضي للفيديو = لين يخلص)', it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }),
-        toggle('يظهر في العرض', it.show !== false, function (v) { save(p + '/show', v); }),
-        toggle('ثبّت الآن على الشاشة', !!it.pin, function (v) { save(p + '/pin', v).then(render); })
-      ]; }
+    var items = vals(current.media).reverse(), now = Date.now();
+    var showing = items.filter(function (m) { return m.pin && (!m.pinUntil || m.pinUntil > now); })[0];
+    var wrap = h('div');
+    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو ملف PDF من جوالك، أو أضف رابط فيديو، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
+    if (showing) {
+      wrap.appendChild(h('div', { class: 'card now-card' }, [
+        h('b', { text: 'يُعرض الآن على الشاشة: ' + (showing.label || 'ملف') }),
+        h('span', { class: 'hint', style: 'margin:0', text: showing.pinUntil ? 'يتوقف تلقائيًا الساعة ' + new Date(showing.pinUntil).toLocaleTimeString('ar-OM', { hour: 'numeric', minute: '2-digit' }) : 'مستمر حتى توقفه' }),
+        h('button', { class: 'btn full', type: 'button', text: 'إيقاف العرض والرجوع للشاشة', onclick: function () { ref('media/' + showing._id).update({ pin: false, pinUntil: null }).then(function () { toast('رجعت الشاشة الرئيسية'); render(); }); } })
+      ]));
+    }
+    var file = h('input', { type: 'file', accept: 'image/*,application/pdf', multiple: true, hidden: true });
+    file.addEventListener('change', function () { uploadFiles(Array.prototype.slice.call(file.files)); file.value = ''; });
+    wrap.appendChild(h('div', { class: 'card' }, [
+      h('button', { class: 'btn gold full', type: 'button', text: '+ رفع صور أو ملف PDF', onclick: function () { file.click(); } }),
+      h('button', { class: 'btn ghost full', type: 'button', text: '+ رابط فيديو (يوتيوب أو Google Drive)', onclick: function () {
+        ref('media').push().set({ label: 'فيديو', url: '', dur: 0, show: false, pin: false }).then(function () { toast('أضف الرابط في البطاقة الجديدة'); render(); });
+      } }),
+      file
+    ]));
+    if (!items.length) wrap.appendChild(h('div', { class: 'card' }, [h('p', { class: 'hint', style: 'margin:0', text: 'ما فيه ملفات بعد.' })]));
+    items.forEach(function (it) {
+      var p = 'media/' + it._id, live = it.pin && (!it.pinUntil || it.pinUntil > now);
+      var thumb = h('div', { class: 'mthumb' });
+      var src = (it.pages && it.pages[0]) || it.img;
+      if (src) thumb.appendChild(h('img', { src: src, alt: '' })); else thumb.textContent = it.url ? 'فيديو' : '—';
+      if (it.pages) thumb.appendChild(h('span', { class: 'mpages', text: it.pages.length + ' صفحة' }));
+      var durSel = h('select', { class: 'in', 'aria-label': 'مدة العرض' });
+      [[0, 'حتى أوقفه'], [5, '٥ دقائق'], [15, '١٥ دقيقة'], [30, '٣٠ دقيقة'], [60, 'ساعة']].forEach(function (o) { durSel.appendChild(h('option', { value: o[0], text: o[1] })); });
+      var fields = [
+        h('div', { class: 'mrow' }, [thumb, h('div', { class: 'fl', style: 'flex:1' }, [field('الاسم', it.label, function (v) { save(p + '/label', v); })])])
+      ];
+      if (!src) fields.push(field('رابط الفيديو', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://youtube.com/…' }));
+      fields.push(field(it.pages ? 'ثواني لكل صفحة' : (src ? 'المدة بالثواني في العرض التلقائي' : 'المدة بالثواني (فاضي = لين يخلص)'), it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }));
+      fields.push(toggle('ضمن العرض التلقائي', it.show !== false, function (v) { save(p + '/show', v); }));
+      fields.push(h('div', { class: 'row' }, [h('div', { class: 'fl', style: 'flex:1' }, [durSel]), h('button', { class: 'btn' + (live ? '' : ' gold'), type: 'button', text: live ? 'يُعرض الآن' : 'اعرض الآن', onclick: function () {
+        var mins = +durSel.value, upd = {};
+        items.forEach(function (m) { if (m.pin) { upd[m._id + '/pin'] = false; upd[m._id + '/pinUntil'] = null; } });
+        upd[it._id + '/pin'] = true; upd[it._id + '/pinUntil'] = mins ? Date.now() + mins * 60000 : null;
+        ref('media').update(upd).then(function () { toast('ينعرض الآن على الشاشة'); render(); }).catch(function (e) { toast('ما انحفظ: ' + e.message); });
+      } })]));
+      fields.push(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () { if (confirm('متأكد تبي تحذفه؟')) ref(p).remove().then(function () { toast('تم الحذف'); render(); }); } }));
+      wrap.appendChild(h('div', { class: 'card' + (live ? ' live-card' : '') }, fields));
     });
+    return wrap;
   },
   wisdom: function () {
     var s0 = Object.assign({}, DEFAULT.settings, current.settings || {});
