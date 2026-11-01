@@ -76,16 +76,18 @@
   .meter i { display: block; height: 18px; width: 0; border-radius: 999px; min-width: 18px; background: var(--c-orange); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); transition: width 1s linear; }
   .meter { background: linear-gradient(#E0E7FF, #E0E7FF) content-box, #fff; background-clip: content-box, border-box; }
   .meter { border-radius: 0 0 26px 26px; }
-  /* شريط الأسبوع: أيام الدراسة حتى الإجازة */
-  .week { margin-top: auto; width: 100%; box-sizing: border-box; border-radius: 26px; background: var(--c-secondary); border: var(--bw) solid #6366F1; box-shadow: var(--clay-c); color: var(--c-fg); padding: 14px 18px 16px; text-align: right; }
-  .qr-box + .week { margin-top: 20px; }
-  .wk-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-  .wk-t { font-size: 21px; font-weight: 700; }
-  .wk-top b { font-size: 24px; font-weight: 800; color: var(--c-fg); background: var(--c-yellow); border-radius: 14px; padding: 2px 14px; white-space: nowrap; }
-  .wk-days { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .wk-d { height: 54px; border-radius: 16px; background: rgba(255,255,255,.45); display: grid; place-items: center; font-size: 19px; font-weight: 800; color: var(--c-primary-d); transition: background .4s, transform .4s; }
-  .wk-d.done { background: var(--c-primary); color: #fff; }
-  .wk-d.today { background: #fff; color: var(--c-orange-d); box-shadow: inset 0 0 0 4px var(--c-orange); transform: translateY(-4px); }
+  /* الصف المثالي */
+  .best { margin-top: auto; width: 100%; box-sizing: border-box; border-radius: 26px; background: var(--c-yellow); border: var(--bw) solid var(--c-yellow-d); box-shadow: var(--clay-c); color: var(--c-fg); padding: 16px 18px; display: flex; align-items: center; gap: 14px; text-align: right; position: relative; overflow: hidden; }
+  .qr-box + .best { margin-top: 20px; }
+  .bt-ic { flex-shrink: 0; color: var(--c-primary-d); animation: trophy 3.2s ease-in-out infinite; }
+  @keyframes trophy { 0%, 100% { transform: rotate(0); } 10% { transform: rotate(-10deg) scale(1.08); } 20% { transform: rotate(8deg) scale(1.08); } 30% { transform: none; } }
+  .bt-tx { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+  .bt-t { font-size: 20px; font-weight: 700; color: #3F3A1C; }
+  .bt-c { font-size: 38px; font-weight: 800; line-height: 1.15; }
+  .bt-b { margin-top: 4px; padding: 3px 16px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #fff; background: var(--c-primary); }
+  .bt-b.k-نظافة { background: var(--c-green); } .bt-b.k-حضور { background: var(--c-orange-d); } .bt-b.k-انضباط { background: var(--c-primary); } .bt-b.k-تميز { background: var(--c-pink); }
+  .best::after { content: ''; position: absolute; top: -20%; bottom: -20%; width: 90px; left: -130px; background: rgba(255,255,255,.5); transform: skewX(-20deg); animation: shine 6s 1.5s ease-in-out infinite; }
+  .best.pop .bt-c { animation: pop2 .9s cubic-bezier(.16,1,.3,1); }
 
   .qr-box { margin-top: auto; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 20px; background: var(--c-card); color: var(--c-fg); border-radius: 26px; padding: 16px 18px; text-align: right; }
   .qr { width: 132px; height: 132px; flex-shrink: 0; background: #fff; border-radius: 14px; }
@@ -284,7 +286,7 @@
   .zoomer.out { animation: zfade .25s ease reverse both; }
 
   @media (prefers-reduced-motion: reduce) {
-    .zoomer, .zoomer > .zc, .wisdom, .wisdom p.show,
+    .zoomer, .zoomer > .zc, .wisdom, .wisdom p.show, .bt-ic, .best::after,
     .blobs i, #stage header > *, .side, .ann, .honor, .events, .sched, .per, .ev, .avatar, .spark, .honor::after, .qr, .news-tag, .days.soon, .per.now, .ann-img img, .clock .colon, .meter i, .ann-text::before, .now-label::before { animation: none !important; }
     .confetti { display: none; }
   }
@@ -385,9 +387,13 @@
         <div class="qr" id="qr" aria-hidden="true"></div>
         <div class="qr-t"><b>لوحة التحكم</b><span>امسح الرمز بكاميرا الجوال</span></div>
       </div>
-      <div class="week" id="week">
-        <div class="wk-top"><span class="wk-t">الأسبوع الدراسي</span><b id="wkLeft"></b></div>
-        <div class="wk-days" id="wkDays"></div>
+      <div class="best" id="best" hidden>
+        <svg class="bt-ic" width="66" height="66" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+        <div class="bt-tx">
+          <div class="bt-t">الصف المثالي هذا الأسبوع</div>
+          <div class="bt-c" id="bestCls"></div>
+          <span class="bt-b" id="bestWhy"></span>
+        </div>
       </div>
     </section>
     <section class="ann" id="ann">
@@ -1819,6 +1825,7 @@ function normalize(v) {
     honor: v.honor || DEFAULT.honor,
     sched: sched,
     media: vals(v.media).filter(function (m) { return m.url || m.img; }),
+    best: v.best || {},
     wisdom: vals(v.wisdom).filter(function (w) { return w.show !== false && w.t; }).map(function (w) { return w.t; })
   };
 }
@@ -1849,7 +1856,7 @@ function renderStatic() {
   var av = el('avatar'); av.innerHTML = '';
   if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
   else av.textContent = (h.name || 'ح').trim().charAt(0);
-  renderEvents(); renderNews(); renderWisdom();
+  renderEvents(); renderNews(); renderWisdom(); renderBest();
   if (annIndex >= data.ann.length) annIndex = 0;
   showAnn(annIndex, true);
 }
@@ -1886,6 +1893,20 @@ var WISDOM = [
   'لا تقل لا أستطيع، بل قل سأحاول.',
   'من علّم غيره تعلّم مرتين.'
 ];
+var BEST_KINDS = ['الانضباط', 'النظافة', 'الحضور', 'التميز'];
+var bestKey = '';
+function renderBest() {
+  var b = data.best || {}, box = el('best');
+  if (!b.cls) { box.hidden = true; bestKey = ''; return; }
+  box.hidden = false;
+  var key = b.cls + '|' + (b.why || '');
+  el('bestCls').textContent = b.cls;
+  var w = el('bestWhy'), why = b.why || 'التميز';
+  w.textContent = why;
+  w.className = 'bt-b k-' + why.replace(/^ال/, '').replace('ّ', '');
+  if (bestKey && bestKey !== key) { box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); if (typeof celebrate === 'function') celebrate(); }
+  bestKey = key;
+}
 var wisdomKey = '';
 function renderWisdom() {
   var list = data.wisdom && data.wisdom.length ? data.wisdom : WISDOM;
@@ -2104,27 +2125,6 @@ function renderNow(weekend, curIdx, nowMin, first, last) {
   el('nowName').textContent = name;
   el('nowLeft').innerHTML = left;
   el('nowBar').style.width = Math.round(pct * 100) + '%';
-  renderWeek(nowMin >= last);
-}
-/* ---- الأسبوع الدراسي: من الأحد إلى الخميس، وكم باقي على الإجازة ---- */
-var WEEK_NAMES = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'];
-function renderWeek(dayOver) {
-  var d = nowLocal().getUTCDay(), key = d + '|' + dayOver;
-  if (renderWeek._k === key) return; renderWeek._k = key;
-  var box = el('wkDays'); box.innerHTML = '';
-  WEEK_NAMES.forEach(function (nm, k) {
-    var c = document.createElement('div'), cls = 'wk-d';
-    if (d <= 4) { if (k < d || (k === d && dayOver)) cls += ' done'; else if (k === d) cls += ' today'; }
-    else cls += ' done';
-    c.className = cls; c.textContent = nm.replace('ال', ''); box.appendChild(c);
-  });
-  var left = d <= 4 ? 4 - d + (dayOver ? 0 : 1) : 0, t;
-  if (d > 4) t = 'إجازة سعيدة';
-  else if (d === 4) t = dayOver ? 'إجازة سعيدة' : 'آخر يوم!';
-  else if (left === 1) t = 'باقي يوم';
-  else if (left === 2) t = 'باقي يومان';
-  else t = 'باقي ' + ar(left) + ' أيام';
-  el('wkLeft').textContent = t;
 }
 
 /* ---- العرض بملء الشاشة ---- */
@@ -2241,7 +2241,7 @@ function startTV() {
    ===================================================== */
 var ref = function (p) { return db.ref('screen' + (p ? '/' + p : '')); };
 var current = {}, activeTab = 'ann';
-var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
+var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['best', 'الصف المثالي'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
 
 function toast(msg) { var t = el('toast'); t.textContent = msg || 'تم الحفظ'; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1600); }
 function save(path, value) { return ref(path).set(value).then(function () { toast(); }).catch(function (e) { toast('ما انحفظ: ' + (e.code === 'PERMISSION_DENIED' ? 'ما عندك صلاحية' : e.message)); }); }
@@ -2389,6 +2389,18 @@ var PANELS = {
         field('الوقت أو المكان', it.s, function (v) { save(p + '/s', v); }, { ph: 'مثال: الساعة ٨ صباحًا · الملعب' })
       ]; }
     });
+  },
+  best: function () {
+    var it = current.best || {};
+    var sel = h('select', { class: 'in', id: 'bestWhySel' });
+    BEST_KINDS.forEach(function (k) { var op = h('option', { value: k, text: k }); if ((it.why || 'الانضباط') === k) op.selected = true; sel.appendChild(op); });
+    sel.onchange = function () { save('best/why', sel.value); };
+    return h('div', { class: 'card' }, [
+      h('p', { class: 'hint', style: 'margin:0', text: 'يظهر أسفل لوحة الوقت مع كأس وشارة ملوّنة. عند تغيير الصف تحتفل الشاشة بقصاصات ملوّنة.' }),
+      field('الصف', it.cls, function (v) { save('best/cls', v.trim()); }, { ph: 'مثال: العاشر ٢' }),
+      h('div', { class: 'fl' }, [h('label', { for: 'bestWhySel', text: 'سبب الاختيار' }), sel]),
+      h('button', { class: 'btn del', type: 'button', text: 'إخفاء من الشاشة', onclick: function () { ref('best').remove().then(function () { toast('تم الإخفاء'); render(); }); } })
+    ]);
   },
   honor: function () {
     var it = current.honor || {};
