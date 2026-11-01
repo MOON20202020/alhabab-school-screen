@@ -194,6 +194,8 @@
   .days b { font-size: 24px !important; }
   .ev-t { font-size: 24px !important; }
   .ev-s { font-size: 18px !important; }
+  /* ضمان: بعد ثوانٍ من التشغيل يظهر كل شيء حتى لو توقفت حركات الدخول */
+  body.ready #stage header > *, body.ready .side, body.ready .ann, body.ready .honor, body.ready .wisdom, body.ready .events, body.ready .sched, body.ready .ev, body.ready .per:not(.now) { animation: none !important; opacity: 1 !important; clip-path: none !important; }
   /* ================= الحركة والتفاعل ================= */
   /* خلفية حيّة: دوائر ملوّنة تتحرك ببطء */
   .blobs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -2229,6 +2231,7 @@ function startTV() {
   drawQR(); renderStatic(); tick();
   setInterval(tick, 1000); setInterval(mediaTick, 1000);
   scheduleAnn();
+  setTimeout(function () { document.body.classList.add('ready'); }, 3000);
   setTimeout(function () { document.querySelectorAll('.per').forEach(function (p) { p.classList.add('settled'); }); tick._settled = true; }, 2200);
   setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
