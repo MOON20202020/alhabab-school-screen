@@ -88,6 +88,14 @@
   .bt-b.k-x0 { background: var(--c-sky); } .bt-b.k-x1 { background: var(--c-teal); } .bt-b.k-x2 { background: var(--c-red); } .bt-b.k-x3 { background: #7C3AED; }
   .bt-b { display: inline-block; padding: 3px 14px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #fff; background: var(--c-primary); }
   .bt-b.k-نظافة { background: var(--c-green); } .bt-b.k-حضور { background: var(--c-orange-d); } .bt-b.k-انضباط { background: var(--c-primary); } .bt-b.k-تميز { background: var(--c-pink); }
+  /* بعد إزالة الباركود: بطاقة الصف المثالي أكبر وعمودية */
+  .best { flex: 1; margin-top: 24px !important; flex-direction: column; justify-content: center; text-align: center; gap: 10px; padding: 22px 18px; }
+  .best .bt-ic { width: 96px; height: 96px; }
+  .best .bt-tx { align-items: center; gap: 6px; }
+  .best .bt-t { font-size: 23px; }
+  .best .bt-c { font-size: 54px; }
+  .best .bt-bs { justify-content: center; gap: 8px; }
+  .best .bt-b { font-size: 22px; padding: 4px 16px; }
   .best::after { content: ''; position: absolute; top: -20%; bottom: -20%; width: 90px; left: -130px; background: rgba(255,255,255,.5); transform: skewX(-20deg); animation: shine 6s 1.5s ease-in-out infinite; }
   .best.pop .bt-c { animation: pop2 .9s cubic-bezier(.16,1,.3,1); }
 
@@ -401,10 +409,6 @@
       <div class="now-name" id="nowName"></div>
       <div class="now-left" id="nowLeft"></div>
       <div class="meter"><i id="nowBar"></i></div>
-      <div class="qr-box" id="qrBox">
-        <div class="qr" id="qr" aria-hidden="true"></div>
-        <div class="qr-t"><b>لوحة التحكم</b><span>امسح الرمز بكاميرا الجوال</span></div>
-      </div>
       <div class="best" id="best">
         <svg class="bt-ic" width="66" height="66" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
         <div class="bt-tx">
@@ -1861,7 +1865,6 @@ function renderStatic() {
   var st = data.settings;
   el('schoolName').textContent = st.name;
   el('schoolSub').textContent = st.sub;
-  el('qrBox').hidden = st.qr === false;
   if (/^#[0-9a-f]{3,8}$/i.test(st.accent || '')) document.documentElement.style.setProperty('--accent', st.accent);
   if (logoKey !== st.logo) {
     logoKey = st.logo; var logo = el('logo'); logo.innerHTML = '';
@@ -2246,7 +2249,7 @@ function startTV() {
   if (!FIREBASE_CONFIG) raw = DEMO; // وضع تجريبي حتى يتم ربط Firebase
   data = normalize(raw);
   fit(); window.addEventListener('resize', fit);
-  drawQR(); renderStatic(); tick();
+  renderStatic(); tick();
   setInterval(tick, 1000); setInterval(mediaTick, 1000);
   scheduleAnn();
   setTimeout(function () { document.body.classList.add('ready'); }, 3000);
@@ -2519,8 +2522,7 @@ var PANELS = {
         h('h3', { text: 'التوقيت' }),
         field('كل كم ثانية يتبدل الإعلان', s.annSeconds, function (v) { save('settings/annSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 3 }),
         field('كم ثانية تبقى الشاشة الرئيسية قبل العرض الكامل', s.mainSeconds, function (v) { save('settings/mainSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 5 }),
-        toggle('تشغيل صوت الفيديو', !!s.sound, function (v) { save('settings/sound', v); }),
-        toggle('إظهار باركود لوحة التحكم على الشاشة', s.qr !== false, function (v) { save('settings/qr', v); })
+        toggle('تشغيل صوت الفيديو', !!s.sound, function (v) { save('settings/sound', v); })
       ]),
       h('div', { class: 'card' }, [
         h('h3', { text: 'معاينة' }),
