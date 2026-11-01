@@ -55,6 +55,10 @@
   .greg { background: var(--c-card); border: var(--bw) solid var(--c-border); box-shadow: var(--clay); }
   .hijri { background: var(--c-yellow); border: var(--bw) solid var(--c-yellow-d); color: var(--c-fg); box-shadow: var(--clay-c); }
 
+  .hdr-left { display: flex; align-items: center; gap: 26px; flex-shrink: 0; }
+  .moe { height: 112px; width: auto; display: block; }
+  .logo.has-img { width: auto; height: 104px; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .logo.has-img img { width: auto; height: 100%; object-fit: contain; }
   /* الشبكة: 1920 = 56 + 440 + 32 + 834 + 32 + 470 + 56 */
   #stage main { flex: 1; min-height: 0; padding: 4px 56px 30px; box-sizing: border-box; display: grid; grid-template-columns: 440px minmax(0, 1fr) 470px; grid-template-rows: minmax(0, 1fr) 200px; gap: 32px; }
 
@@ -234,9 +238,12 @@
         <div class="school-sub" id="schoolSub">الصفوف من التاسع إلى الثاني عشر</div>
       </div>
     </div>
-    <div class="dates">
-      <div class="greg" id="greg"></div>
-      <div class="hijri" id="hijri"></div>
+    <div class="hdr-left">
+      <div class="dates">
+        <div class="greg" id="greg"></div>
+        <div class="hijri" id="hijri"></div>
+      </div>
+      <img class="moe" src="moe-logo.png" alt="وزارة التعليم">
     </div>
   </header>
   <main>
@@ -1688,7 +1695,7 @@ function fit() {
   st.style.top = ((window.innerHeight - 1080 * s) / 2) + 'px';
 }
 
-var annIndex = 0, newsKey = '', logoKey = '';
+var annIndex = 0, newsKey = '', logoKey = null;
 function renderStatic() {
   var st = data.settings;
   el('schoolName').textContent = st.name;
@@ -1697,7 +1704,8 @@ function renderStatic() {
   if (/^#[0-9a-f]{3,8}$/i.test(st.accent || '')) document.documentElement.style.setProperty('--accent', st.accent);
   if (logoKey !== st.logo) {
     logoKey = st.logo; var logo = el('logo'); logo.innerHTML = '';
-    if (st.logo) { var li = new Image(); li.src = st.logo; li.alt = 'شعار المدرسة'; logo.appendChild(li); } else logo.textContent = 'ح';
+    var li = new Image(); li.src = st.logo || 'school-logo.png'; li.alt = 'شعار المدرسة'; logo.appendChild(li); logo.classList.add('has-img');
+    li.onerror = function () { logo.innerHTML = 'ح'; logo.classList.remove('has-img'); };
   }
   var h = data.honor || {};
   el('honorName').textContent = h.name || '—';
