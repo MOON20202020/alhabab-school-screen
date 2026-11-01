@@ -327,6 +327,7 @@
   #media.on { opacity: 1; }
   #media img, #media video { width: 100%; height: 100%; object-fit: contain; display: block; }
   #media iframe { width: 100%; height: 100%; border: 0; display: block; }
+  #media .m-loading { color: #fff; font-size: 40px; font-family: var(--f); }
   .demo-tag { position: absolute; left: 690px; top: 44px; z-index: 6; background: var(--c-orange); color: #fff; font-size: 22px; font-weight: 700; padding: 4px 16px; border-radius: 999px; }
   .offline { position: absolute; left: 24px; bottom: 96px; background: var(--c-fg); color: #fff; font-size: 18px; padding: 8px 16px; border-radius: 999px; z-index: 5; }
   .setup-msg { position: absolute; inset: 0; z-index: 20; background: var(--c-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; line-height: 1.6; text-align: center; padding: 80px; box-sizing: border-box; }
@@ -1883,7 +1884,7 @@ function normalize(v) {
     events: vals(v.events).filter(function (e) { return e.t; }),
     honor: v.honor || DEFAULT.honor,
     sched: sched,
-    media: vals(v.media).filter(function (m) { return m.url || m.img || (m.pages && m.pages.length); }),
+    media: vals(v.media).filter(function (m) { return m.url || m.img || m.file || (m.pages && m.pages.length); }),
     best: v.best || {},
     wisdom: vals(v.wisdom).filter(function (w) { return w.show !== false && w.t; }).map(function (w) { return w.t; })
   };
@@ -2233,6 +2234,7 @@ function renderNow(weekend, curIdx, nowMin, first, last) {
 
 /* ---- العرض بملء الشاشة ---- */
 function mediaSource(item) {
+  if (item.file) return { kind: 'filevideo', id: item.file, mime: item.mime || 'video/mp4' };
   if (item.pages && item.pages.length) return { kind: 'pages', pages: item.pages };
   if (item.img) return { kind: 'image', src: item.img };
   var url = item.url, m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/);
@@ -2262,6 +2264,20 @@ function playMedia(item, loop) {
     }, per * 1000);
     node.style.transition = 'opacity .3s';
     mediaUntil = loop ? 0 : now + per * src.pages.length * 1000;
+  } else if (src.kind === 'filevideo') { // فيديو مرفوع: نجمع أجزاءه من قاعدة البيانات مرة وحدة ونحفظه في الذاكرة
+    node = document.createElement('div'); node.className = 'm-loading'; node.textContent = 'جاري تحميل الفيديو…';
+    mediaUntil = loop ? 0 : now + 10 * 60 * 1000;
+    var myKey = mediaKey;
+    loadFileVideo(src.id, src.mime).then(function (url) {
+      if (mediaKey !== myKey) return;
+      var v = document.createElement('video');
+      v.src = url; v.autoplay = true; v.muted = !sound; v.playsInline = true; v.loop = !!loop;
+      v.onended = function () { if (!loop) nextMedia(); };
+      v.onerror = function () { if (!loop) nextMedia(); };
+      if (!loop) mediaUntil = dur ? Date.now() + dur * 1000 : Date.now() + 15 * 60 * 1000;
+      box.innerHTML = ''; box.appendChild(v);
+      try { var pr = v.play(); if (pr && pr.catch) pr.catch(function () { v.muted = true; v.play(); }); } catch (e) {}
+    }).catch(function () { if (!loop) nextMedia(); else node.textContent = 'تعذر تحميل الفيديو'; });
   } else if (src.kind === 'youtube') {
     node = document.createElement('iframe'); node.allow = 'autoplay; encrypted-media';
     node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound ? 0 : 1);
@@ -2288,6 +2304,21 @@ function playMedia(item, loop) {
   }
   box.appendChild(node); box.classList.add('show');
   setTimeout(function () { box.classList.add('on'); }, 30);
+}
+var fileCache = {};
+function b64ToBytes(b) { var bin = atob(b), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+function loadFileVideo(id, mime) {
+  if (fileCache[id]) return fileCache[id];
+  if (!db) return Promise.reject(new Error('no db'));
+  fileCache[id] = db.ref('files/' + id + '/c').once('value').then(function (snap) {
+    var parts = [], keys = [];
+    snap.forEach(function (ch) { keys.push(+ch.key); parts[+ch.key] = ch.val(); });
+    if (!keys.length) throw new Error('empty');
+    var blobs = parts.map(b64ToBytes);
+    return URL.createObjectURL(new Blob(blobs, { type: mime }));
+  });
+  fileCache[id].catch(function () { delete fileCache[id]; });
+  return fileCache[id];
 }
 function mediaList() { return data.media.filter(function (m) { return m.show !== false; }); }
 function nextMedia() {
@@ -2442,6 +2473,17 @@ function pdfToPages(file, max) {
     return next().then(function (pages) { if (pdf.numPages > n) toast('عرضت أول ' + n + ' صفحة فقط'); return pages; });
   });
 }
+function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغيرة ونخزنها في قاعدة البيانات
+  var CH = 700 * 1024, id = 'v' + Date.now().toString(36), n = Math.ceil(f.size / CH), k = 0;
+  function b64(buf) { var u = new Uint8Array(buf), s = '', step = 0x8000; for (var i = 0; i < u.length; i += step) s += String.fromCharCode.apply(null, u.subarray(i, i + step)); return btoa(s); }
+  function next() {
+    if (k >= n) return db.ref('files/' + id + '/meta').set({ name: f.name, size: f.size, mime: f.type, n: n }).then(function () { return id; });
+    var i = k; k++;
+    toast('رفع الفيديو ' + Math.round(i / n * 100) + '٪');
+    return f.slice(i * CH, Math.min(f.size, (i + 1) * CH)).arrayBuffer().then(function (buf) { return db.ref('files/' + id + '/c/' + i).set(b64(buf)); }).then(next);
+  }
+  return next();
+}
 function uploadFiles(files) {
   if (!files.length) return;
   var chain = Promise.resolve(), done = 0;
@@ -2450,6 +2492,10 @@ function uploadFiles(files) {
       var name = f.name.replace(/\.[^.]+$/, '');
       if (/pdf$/i.test(f.type) || /\.pdf$/i.test(f.name)) {
         return pdfToPages(f, 25).then(function (pages) { return ref('media').push().set({ label: name, pages: pages, dur: 10, show: false, pin: false }); }).then(function () { done++; });
+      }
+      if (/^video\//.test(f.type) || /\.(mp4|webm|mov|m4v)$/i.test(f.name)) {
+        if (f.size > 60 * 1024 * 1024) { toast('الفيديو أكبر من ٦٠ ميجا، قصّه أو ضغطه أولًا'); return; }
+        return uploadVideo(f).then(function (id) { return ref('media').push().set({ label: name, file: id, mime: f.type || 'video/mp4', size: f.size, dur: 0, show: false, pin: false }); }).then(function () { done++; });
       }
       if (/^image\//.test(f.type)) {
         toast('جاري رفع ' + name);
@@ -2505,7 +2551,7 @@ var PANELS = {
     var items = vals(current.media).reverse(), now = Date.now();
     var showing = items.filter(function (m) { return m.pin && (!m.pinUntil || m.pinUntil > now); })[0];
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو ملف PDF من جوالك، أو أضف رابط فيديو، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
+    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو فيديو أو ملف PDF من جوالك (الفيديو حتى ٦٠ ميجا، ويفضّل MP4)، أو أضف رابط يوتيوب، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
     if (showing) {
       wrap.appendChild(h('div', { class: 'card now-card' }, [
         h('b', { text: 'يُعرض الآن على الشاشة: ' + (showing.label || 'ملف') }),
@@ -2513,11 +2559,11 @@ var PANELS = {
         h('button', { class: 'btn full', type: 'button', text: 'إيقاف العرض والرجوع للشاشة', onclick: function () { ref('media/' + showing._id).update({ pin: false, pinUntil: null }).then(function () { toast('رجعت الشاشة الرئيسية'); render(); }); } })
       ]));
     }
-    var file = h('input', { type: 'file', accept: 'image/*,application/pdf', multiple: true, hidden: true });
+    var file = h('input', { type: 'file', accept: 'image/*,video/*,application/pdf', multiple: true, hidden: true });
     file.addEventListener('change', function () { uploadFiles(Array.prototype.slice.call(file.files)); file.value = ''; });
     wrap.appendChild(h('div', { class: 'card' }, [
-      h('button', { class: 'btn gold full', type: 'button', text: '+ رفع صور أو ملف PDF', onclick: function () { file.click(); } }),
-      h('button', { class: 'btn ghost full', type: 'button', text: '+ رابط فيديو (يوتيوب أو Google Drive)', onclick: function () {
+      h('button', { class: 'btn gold full', type: 'button', text: '+ رفع صور أو فيديو أو ملف PDF', onclick: function () { file.click(); } }),
+      h('button', { class: 'btn ghost full', type: 'button', text: '+ رابط يوتيوب أو Google Drive', onclick: function () {
         ref('media').push().set({ label: 'فيديو', url: '', dur: 0, show: false, pin: false }).then(function () { toast('أضف الرابط في البطاقة الجديدة'); render(); });
       } }),
       file
@@ -2527,14 +2573,15 @@ var PANELS = {
       var p = 'media/' + it._id, live = it.pin && (!it.pinUntil || it.pinUntil > now);
       var thumb = h('div', { class: 'mthumb' });
       var src = (it.pages && it.pages[0]) || it.img;
-      if (src) thumb.appendChild(h('img', { src: src, alt: '' })); else thumb.textContent = it.url ? 'فيديو' : '—';
+      if (src) thumb.appendChild(h('img', { src: src, alt: '' })); else thumb.textContent = (it.url || it.file) ? '▶ فيديو' : '—';
+      if (it.file && it.size) thumb.appendChild(h('span', { class: 'mpages', text: Math.round(it.size / 1048576 * 10) / 10 + ' ميجا' }));
       if (it.pages) thumb.appendChild(h('span', { class: 'mpages', text: it.pages.length + ' صفحة' }));
       var durSel = h('select', { class: 'in', 'aria-label': 'مدة العرض' });
       [[0, 'حتى أوقفه'], [5, '٥ دقائق'], [15, '١٥ دقيقة'], [30, '٣٠ دقيقة'], [60, 'ساعة']].forEach(function (o) { durSel.appendChild(h('option', { value: o[0], text: o[1] })); });
       var fields = [
         h('div', { class: 'mrow' }, [thumb, h('div', { class: 'fl', style: 'flex:1' }, [field('الاسم', it.label, function (v) { save(p + '/label', v); })])])
       ];
-      if (!src) fields.push(field('رابط الفيديو', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://youtube.com/…' }));
+      if (!src && !it.file) fields.push(field('رابط الفيديو', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://youtube.com/…' }));
       fields.push(field(it.pages ? 'ثواني لكل صفحة' : (src ? 'المدة بالثواني في العرض التلقائي' : 'المدة بالثواني (فاضي = لين يخلص)'), it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }));
       fields.push(toggle('ضمن العرض التلقائي', it.show !== false, function (v) { save(p + '/show', v); }));
       if (live) fields.push(h('button', { class: 'btn stop full', type: 'button', text: '■ إيقاف الآن', onclick: function () {
@@ -2546,7 +2593,7 @@ var PANELS = {
         upd[it._id + '/pin'] = true; upd[it._id + '/pinUntil'] = mins ? Date.now() + mins * 60000 : null;
         ref('media').update(upd).then(function () { toast('ينعرض الآن على الشاشة'); render(); }).catch(function (e) { toast('ما انحفظ: ' + e.message); });
       } })]));
-      fields.push(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () { if (confirm('متأكد تبي تحذفه؟')) ref(p).remove().then(function () { toast('تم الحذف'); render(); }); } }));
+      fields.push(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () { if (confirm('متأكد تبي تحذفه؟')) Promise.all([ref(p).remove(), it.file ? db.ref('files/' + it.file).remove() : null]).then(function () { toast('تم الحذف'); render(); }); } }));
       wrap.appendChild(h('div', { class: 'card' + (live ? ' live-card' : '') }, fields));
     });
     return wrap;
