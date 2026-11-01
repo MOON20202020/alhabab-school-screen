@@ -32,3 +32,9 @@
 5. في ملف `index.html` ضع الإعدادات مكان `var FIREBASE_CONFIG = null;`
 
 بعدها سجّل الدخول في لوحة التحكم باسم المستخدم `admin` وكلمة السر.
+
+## مصدر الآيات القرآنية
+
+الآيات المعروضة في بطاقة «حكمة اليوم» (٥٢٢ آية قصيرة مختارة) منقولة حرفيًا دون أي تعديل من:
+
+Tanzil Quran Text (Simple), Copyright (C) 2007-2024 Tanzil Project — Creative Commons Attribution 3.0 — http://tanzil.net
