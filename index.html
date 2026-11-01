@@ -219,6 +219,11 @@
   .wisdom h2::before, .wisdom h2::after { content: ''; width: 14px; height: 14px; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23B88A2E'%3E%3Crect x='9' y='9' width='22' height='22'/%3E%3Crect x='9' y='9' width='22' height='22' transform='rotate(45 20 20)'/%3E%3C/g%3E%3Ccircle cx='20' cy='20' r='7' fill='%23FDF8EC'/%3E%3Ccircle cx='20' cy='20' r='3.5' fill='%230F766E'/%3E%3C/svg%3E") center / contain no-repeat; filter: brightness(1.6); }
   .wisdom p { color: #134E4A; }
   .wisdom p, .wisdom p.ayah, .wisdom p.ayah .br, .wisdom .wref { color: #134E4A !important; }
+  /* الفعاليات تتحرك للأعلى إذا زادت عن المساحة */
+  #events { flex: 1; min-height: 0; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); }
+  .ev-track.rolling { animation: evroll linear infinite; }
+  .ev-track.rolling .ev { animation: none !important; }
+  @keyframes evroll { from { transform: translateY(0); } to { transform: translateY(-50%); } }
   /* ================= الحركة والتفاعل ================= */
   /* خلفية حيّة: دوائر ملوّنة تتحرك ببطء */
   .blobs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -313,7 +318,7 @@
   .zoomer.out { animation: zfade .25s ease reverse both; }
 
   @media (prefers-reduced-motion: reduce) {
-    .zoomer, .zoomer > .zc, .wisdom, .wisdom p.show, .bt-ic, .best::after,
+    .zoomer, .zoomer > .zc, .wisdom, .wisdom p.show, .ev-track.rolling, .bt-ic, .best::after,
     .blobs i, #stage header > *, .side, .ann, .honor, .events, .sched, .per, .ev, .avatar, .spark, .honor::after, .qr, .news-tag, .days.soon, .per.now, .ann-img img, .clock .colon, .meter i, .ann-text::before, .now-label::before { animation: none !important; }
     .confetti { display: none; }
   }
@@ -2005,18 +2010,24 @@ function renderWisdom() {
   void p.offsetWidth; p.classList.add('show');
   if (typeof fitEvents === 'function') fitEvents();
 }
-function fitEvents() { // لا نعرض فعالية مقطوعة: نخفي ما لا يتسع
-  var box = el('events'), sec = box.parentNode, rows = box.querySelectorAll('.ev');
-  rows.forEach(function (r) { r.style.display = ''; });
-  for (var k = rows.length - 1; k > 0 && sec.scrollHeight > sec.clientHeight + 2; k--) rows[k].style.display = 'none';
+function fitEvents() { // إذا كانت الفعاليات أكثر من المساحة: تتحرك للأعلى باستمرار وتظهر كلها بالتناوب
+  var box = el('events'), track = box.querySelector('.ev-track'); if (!track) return;
+  track.querySelectorAll('.ev-clone').forEach(function (n) { n.remove(); });
+  track.classList.remove('rolling'); track.style.animationDuration = '';
+  var rows = track.querySelectorAll('.ev');
+  if (track.scrollHeight <= box.clientHeight + 2 || rows.length < 2) return;
+  rows.forEach(function (r) { var c = r.cloneNode(true); c.classList.add('ev-clone'); c.setAttribute('aria-hidden', 'true'); track.appendChild(c); });
+  track.style.animationDuration = Math.max(8, rows.length * 4) + 's';
+  void track.offsetWidth; track.classList.add('rolling');
 }
 function renderEvents() {
   var box = el('events'); box.innerHTML = '';
   var n = nowLocal(), today = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
   var list = data.events.map(function (e) { var t = parseDate(e.date); return { t: e.t, s: e.s || '', days: t === null ? null : Math.round((t - today) / 86400000) }; })
     .filter(function (e) { return e.days !== null && e.days >= 0; })
-    .sort(function (a, b) { return a.days - b.days; }).slice(0, 3);
+    .sort(function (a, b) { return a.days - b.days; }).slice(0, 30);
   if (!list.length) { box.innerHTML = '<div class="empty">لا توجد فعاليات قادمة</div>'; return; }
+  var track = document.createElement('div'); track.className = 'ev-track'; box.appendChild(track);
   list.forEach(function (e) {
     var row = document.createElement('div'); row.className = 'ev';
     var d = document.createElement('div'); d.className = 'days' + (e.days <= 1 ? ' soon' : '');
@@ -2026,7 +2037,7 @@ function renderEvents() {
     var tx = document.createElement('div');
     var t1 = document.createElement('div'); t1.className = 'ev-t'; t1.textContent = e.t;
     var t2 = document.createElement('div'); t2.className = 'ev-s'; t2.textContent = e.s;
-    tx.appendChild(t1); tx.appendChild(t2); row.appendChild(d); row.appendChild(tx); box.appendChild(row);
+    tx.appendChild(t1); tx.appendChild(t2); row.appendChild(d); row.appendChild(tx); track.appendChild(row);
   });
   requestAnimationFrame(fitEvents);
 }
