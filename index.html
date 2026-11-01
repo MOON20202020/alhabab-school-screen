@@ -164,6 +164,26 @@
   @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
 
 
+  /* حكمة اليوم */
+  .wisdom { position: relative; flex-shrink: 0; border-radius: 36px; background: var(--c-teal); border: var(--bw) solid #115E59; box-shadow: var(--clay-c); color: #fff; padding: 18px 26px 20px; overflow: hidden; }
+  .wisdom h2 { margin: 0 0 4px; font-size: 24px; font-weight: 800; color: #99F6E4; }
+  .wisdom p { margin: 0; font-size: 29px; font-weight: 700; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .wisdom .wq { position: absolute; left: 18px; top: 14px; color: rgba(255,255,255,.18); }
+  .wisdom p.show { animation: wisin 1.2s cubic-bezier(.16,1,.3,1) both; }
+  @keyframes wisin { from { opacity: 0; clip-path: inset(0 0 0 100%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
+  #stage aside { gap: 22px !important; }
+  .honor { padding: 16px 22px !important; grid-template-columns: 104px minmax(0, 1fr) !important; row-gap: 4px !important; }
+  .avatar { width: 104px !important; height: 104px !important; font-size: 50px !important; }
+  .honor-name { font-size: 32px !important; }
+  .honor-sub { font-size: 20px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .honor-name { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .events { padding: 16px 24px 6px !important; }
+  .events h2 { font-size: 25px !important; margin-bottom: 2px !important; }
+  .ev { padding: 5px 0 !important; }
+  .days { width: 66px !important; height: 60px !important; border-radius: 18px !important; }
+  .days b { font-size: 24px !important; }
+  .ev-t { font-size: 24px !important; }
+  .ev-s { font-size: 18px !important; }
   /* ================= الحركة والتفاعل ================= */
   /* خلفية حيّة: دوائر ملوّنة تتحرك ببطء */
   .blobs { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
@@ -178,9 +198,9 @@
   #stage header, #stage main, #stage footer { position: relative; z-index: 1; }
 
   /* دخول الأقسام عند التشغيل */
-  #stage header > *, .side, .ann, .honor, .events, .sched { animation: enter .9s cubic-bezier(.16,1,.3,1) both; }
+  #stage header > *, .side, .ann, .honor, .wisdom, .events, .sched { animation: enter .9s cubic-bezier(.16,1,.3,1) both; }
   #stage header > *:nth-child(2) { animation-delay: .1s; }
-  .side { animation-delay: .15s; } .ann { animation-delay: .3s; } .honor { animation-delay: .45s; } .events { animation-delay: .55s; } .sched { animation-delay: .7s; }
+  .side { animation-delay: .15s; } .ann { animation-delay: .3s; } .honor { animation-delay: .45s; } .wisdom { animation-delay: .5s; } .events { animation-delay: .55s; } .sched { animation-delay: .7s; }
   .per { animation: enter .7s cubic-bezier(.16,1,.3,1) both; }
   .per:nth-child(1){animation-delay:.8s}.per:nth-child(2){animation-delay:.85s}.per:nth-child(3){animation-delay:.9s}.per:nth-child(4){animation-delay:.95s}.per:nth-child(5){animation-delay:1s}.per:nth-child(6){animation-delay:1.05s}.per:nth-child(7){animation-delay:1.1s}.per:nth-child(8){animation-delay:1.15s}.per:nth-child(9){animation-delay:1.2s}.per:nth-child(10){animation-delay:1.25s}
   .per.settled { animation: none; }
@@ -247,7 +267,7 @@
   .ann { overflow: hidden; }
   /* تركيز الريموت */
   .kfocus { outline: 7px solid var(--c-orange); outline-offset: 7px; }
-  .side, .ann, .honor, .events, .sched { cursor: pointer; }
+  .side, .ann, .honor, .wisdom, .events, .sched { cursor: pointer; }
   /* نافذة التكبير */
   .zoomer { position: absolute; inset: 0; z-index: 25; background: rgba(30,27,75,.55); display: flex; align-items: center; justify-content: center; animation: zfade .35s ease both; }
   .zoomer > .zc { transform-origin: center; animation: zin .5s cubic-bezier(.16,1,.3,1) both; }
@@ -258,7 +278,7 @@
   .zoomer.out { animation: zfade .25s ease reverse both; }
 
   @media (prefers-reduced-motion: reduce) {
-    .zoomer, .zoomer > .zc,
+    .zoomer, .zoomer > .zc, .wisdom, .wisdom p.show,
     .blobs i, #stage header > *, .side, .ann, .honor, .events, .sched, .per, .ev, .avatar, .spark, .honor::after, .qr, .news-tag, .days.soon, .per.now, .ann-img img, .clock .colon, .meter i, .ann-text::before, .now-label::before { animation: none !important; }
     .confetti { display: none; }
   }
@@ -381,6 +401,11 @@
           <div class="honor-name" id="honorName"></div>
           <div class="honor-sub" id="honorSub"></div>
         </div>
+      </section>
+      <section class="wisdom">
+        <svg class="wq" width="54" height="54" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M10 7H6a3 3 0 0 0-3 3v4h5v5h2v-5a7 7 0 0 0-1-3.6V7Zm11 0h-4a3 3 0 0 0-3 3v4h5v5h2v-5a7 7 0 0 0-1-3.6V7Z" transform="matrix(-1 0 0 1 24 0)"/></svg>
+        <h2>حكمة اليوم</h2>
+        <p id="wisdom"></p>
       </section>
       <section class="events">
         <h2>الفعاليات القادمة</h2>
@@ -1787,7 +1812,8 @@ function normalize(v) {
     events: vals(v.events).filter(function (e) { return e.t; }),
     honor: v.honor || DEFAULT.honor,
     sched: sched,
-    media: vals(v.media).filter(function (m) { return m.url || m.img; })
+    media: vals(v.media).filter(function (m) { return m.url || m.img; }),
+    wisdom: vals(v.wisdom).filter(function (w) { return w.show !== false && w.t; }).map(function (w) { return w.t; })
   };
 }
 
@@ -1817,11 +1843,51 @@ function renderStatic() {
   var av = el('avatar'); av.innerHTML = '';
   if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
   else av.textContent = (h.name || 'ح').trim().charAt(0);
-  renderEvents(); renderNews();
+  renderEvents(); renderNews(); renderWisdom();
   if (annIndex >= data.ann.length) annIndex = 0;
   showAnn(annIndex, true);
 }
 
+var WISDOM = [
+  'العلم نورٌ، والجهل ظلام.',
+  'من جدّ وجد، ومن زرع حصد.',
+  'خيرُ جليسٍ في الزمان كتاب.',
+  'الوقت كالسيف، إن لم تقطعه قطعك.',
+  'من سار على الدرب وصل.',
+  'لكل مجتهدٍ نصيب.',
+  'العلم في الصغر كالنقش على الحجر.',
+  'لا تؤجّل عمل اليوم إلى الغد.',
+  'قيمة كل امرئٍ ما يُحسنه.',
+  'الصبر مفتاح الفرج.',
+  'على قدر أهل العزم تأتي العزائم.',
+  'الكلمة الطيبة صدقة.',
+  'تعلّموا الأدب قبل العلم.',
+  'القراءة غذاء العقل.',
+  'النظام أساس النجاح.',
+  'خير الأمور أوسطها.',
+  'درهم وقاية خيرٌ من قنطار علاج.',
+  'الابتسامة مفتاح القلوب.',
+  'يدٌ واحدة لا تصفّق؛ بالتعاون نصل.',
+  'النجاح رحلة، وليس محطة وصول.',
+  'المعلّم شمعةٌ تحترق لتضيء للآخرين.',
+  'احترم وقتك يحترمك الناس.',
+  'من تواضع ارتفع قدره.',
+  'العقل السليم في الجسم السليم.',
+  'أعظم استثمار هو أن تستثمر في نفسك.',
+  'كل يومٍ صفحة جديدة، فاكتب فيها شيئًا جميلًا.',
+  'السؤال نصف العلم.',
+  'الأخلاق الحسنة تاجٌ على رأس صاحبها.',
+  'لا تقل لا أستطيع، بل قل سأحاول.',
+  'من علّم غيره تعلّم مرتين.'
+];
+var wisdomKey = '';
+function renderWisdom() {
+  var list = data.wisdom && data.wisdom.length ? data.wisdom : WISDOM;
+  var n = nowLocal(), day = Math.floor(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate()) / 86400000);
+  var t = list[day % list.length];
+  if (t === wisdomKey) return; wisdomKey = t;
+  var p = el('wisdom'); p.textContent = t; p.classList.remove('show'); void p.offsetWidth; p.classList.add('show');
+}
 function renderEvents() {
   var box = el('events'); box.innerHTML = '';
   var n = nowLocal(), today = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
@@ -1839,6 +1905,10 @@ function renderEvents() {
     var t1 = document.createElement('div'); t1.className = 'ev-t'; t1.textContent = e.t;
     var t2 = document.createElement('div'); t2.className = 'ev-s'; t2.textContent = e.s;
     tx.appendChild(t1); tx.appendChild(t2); row.appendChild(d); row.appendChild(tx); box.appendChild(row);
+  });
+  requestAnimationFrame(function () { // لا نعرض فعالية مقطوعة: نحذف ما لا يتسع
+    var sec = box.parentNode, rows = box.querySelectorAll('.ev');
+    for (var k = rows.length - 1; k > 0 && sec.scrollHeight > sec.clientHeight + 2; k--) rows[k].remove();
   });
 }
 
@@ -1869,7 +1939,7 @@ function showAnn(i, instant) {
   if (instant) apply(); else { txt.classList.add('fade'); img.classList.add('fade'); setTimeout(apply, 500); }
 }
 /* ---- التنقل بالريموت واللمس ---- */
-var FOCUS = ['.ann', '.honor', '.events', '.sched', '.side'], focusIdx = -1, focusTimer = null, zoomEl = null;
+var FOCUS = ['.ann', '.honor', '.wisdom', '.events', '.sched', '.side'], focusIdx = -1, focusTimer = null, zoomEl = null;
 function setFocus(i) {
   document.querySelectorAll('.kfocus').forEach(function (n) { n.classList.remove('kfocus'); });
   focusIdx = i; clearTimeout(focusTimer);
@@ -2006,7 +2076,7 @@ function tick() {
   else if (nextIdx !== -1) status = 'استراحة قصيرة · ' + data.sched[nextIdx][0] + ' تبدأ ' + fmt12(toMin(data.sched[nextIdx][1]));
   el('status').textContent = status;
   renderNow(weekend, curIdx, nowMin, first, last);
-  if (m === 0 && n.getUTCSeconds() < 1) renderEvents();
+  if (m === 0 && n.getUTCSeconds() < 1) { renderEvents(); renderWisdom(); }
 }
 
 
@@ -2149,7 +2219,7 @@ function startTV() {
    ===================================================== */
 var ref = function (p) { return db.ref('screen' + (p ? '/' + p : '')); };
 var current = {}, activeTab = 'ann';
-var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['news', 'الأخبار'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
+var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
 
 function toast(msg) { var t = el('toast'); t.textContent = msg || 'تم الحفظ'; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1600); }
 function save(path, value) { return ref(path).set(value).then(function () { toast(); }).catch(function (e) { toast('ما انحفظ: ' + (e.code === 'PERMISSION_DENIED' ? 'ما عندك صلاحية' : e.message)); }); }
@@ -2259,6 +2329,18 @@ var PANELS = {
         field('المدة بالثواني (فاضي للفيديو = لين يخلص)', it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }),
         toggle('يظهر في العرض', it.show !== false, function (v) { save(p + '/show', v); }),
         toggle('ثبّت الآن على الشاشة', !!it.pin, function (v) { save(p + '/pin', v).then(render); })
+      ]; }
+    });
+  },
+  wisdom: function () {
+    return listPanel('wisdom', {
+      hint: 'تظهر حكمة واحدة كل يوم وتتغير تلقائيًا. إذا ما أضفت شي، تعرض الشاشة ٣٠ حكمة جاهزة.',
+      addLabel: 'حكمة جديدة', blank: { t: '', show: true },
+      title: function (it) { return it.t || 'حكمة جديدة'; },
+      badge: function (it) { return h('span', { class: 'badge', text: it.show === false ? 'مخفية' : 'ظاهرة' }); },
+      fields: function (it, p) { return [
+        field('نص الحكمة', it.t, function (v) { save(p + '/t', v); }, { multiline: true }),
+        toggle('تظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
       ]; }
     });
   },
