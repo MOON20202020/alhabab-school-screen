@@ -244,29 +244,33 @@
 
 
   /* ================= تفاعل: تصويت مباشر + تنقل بالريموت واللمس ================= */
-  .poll-bars { display: none; flex-direction: column; gap: 14px; margin-top: 4px; }
+  .poll-bars { display: none; flex-direction: column; gap: 10px; margin-top: 4px; }
   .ann.poll .poll-bars { display: flex; }
   .ann.poll p { display: none; }
   .ann.poll h1 { font-size: 48px; -webkit-line-clamp: 2; }
   .ann.poll .ann-text { gap: 12px; }
-  .ann.poll .poll-bars { gap: 10px; }
-  .ann.poll .pb { height: 54px; font-size: 26px; }
   .ann.poll .dots { margin-top: 0; }
   .ann { overflow: hidden; }
-  .pb { position: relative; height: 62px; border-radius: 18px; background: var(--c-muted); overflow: hidden; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; font-size: 28px; font-weight: 800; color: var(--c-fg); }
-  .pb > i { position: absolute; inset: 0 0 0 auto; width: 0; border-radius: 18px; transition: width 1.2s cubic-bezier(.16,1,.3,1); }
-  .pb:nth-child(1) > i { background: #A5B4FC; } .pb:nth-child(2) > i { background: #FDBA74; } .pb:nth-child(3) > i { background: #86EFAC; } .pb:nth-child(4) > i { background: #F9A8D4; }
-  .pb span, .pb b { position: relative; z-index: 1; }
-  .pb b { font-variant-numeric: tabular-nums; }
-  .pb.lead { box-shadow: inset 0 0 0 4px var(--c-orange); }
-  .pb.bump { animation: bump .6s cubic-bezier(.16,1,.3,1); }
-  @keyframes bump { 40% { transform: scale(1.04); } }
-  .poll-total { font-size: 22px; font-weight: 700; color: var(--c-mfg); }
-  .ann.poll .ann-img { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: var(--c-primary); color: #fff; padding: 22px; box-sizing: border-box; }
-  .ann.poll .ann-img .vq { width: 236px; height: 236px; background: #fff; border-radius: 20px; padding: 10px; box-sizing: border-box; animation: breathe 3.5s ease-in-out infinite; }
-  .ann.poll .ann-img .vq svg { width: 100%; height: 100%; display: block; }
-  .ann.poll .ann-img .vt { font-size: 28px; font-weight: 800; text-align: center; line-height: 1.3; }
-  .ann.poll .ann-img .vs { font-size: 20px; font-weight: 600; opacity: .85; text-align: center; }
+  .pb { position: relative; height: 58px; border-radius: 18px; background: var(--c-muted); display: flex; align-items: center; gap: 16px; padding: 0 16px; font-size: 27px; font-weight: 800; color: var(--c-fg); transition: background .5s, color .5s, opacity .5s, transform .5s cubic-bezier(.16,1,.3,1); }
+  .pb .k { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-size: 22px; flex-shrink: 0; }
+  .pb:nth-child(1) .k { background: var(--c-primary); } .pb:nth-child(2) .k { background: var(--c-orange); } .pb:nth-child(3) .k { background: var(--c-green); } .pb:nth-child(4) .k { background: var(--c-pink); }
+  .pb .ok { margin-right: auto; opacity: 0; transform: scale(.4); transition: opacity .4s, transform .5s cubic-bezier(.16,1,.3,1); }
+  .poll-bars.revealed .pb { opacity: .4; }
+  .poll-bars.revealed .pb.right { opacity: 1; background: #DCFCE7; color: #14532D; transform: scale(1.03); box-shadow: inset 0 0 0 4px var(--c-green); }
+  .poll-bars.revealed .pb.right .ok { opacity: 1; transform: none; }
+  .ann.poll .ann-img { display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 10px; background: var(--c-primary); color: #fff; padding: 22px; box-sizing: border-box; text-align: center; }
+  .qz-ring { position: relative; width: 210px; height: 210px; }
+  .qz-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+  .qz-ring .trk { stroke: rgba(255,255,255,.22); }
+  .qz-ring .prg { stroke: var(--c-yellow); transition: stroke-dashoffset 1s linear; }
+  .qz-num { position: absolute; inset: 0; display: grid; place-items: center; font-size: 96px; font-weight: 800; line-height: 1; }
+  .qz-num.tick { animation: qzt .9s cubic-bezier(.16,1,.3,1); }
+  @keyframes qzt { from { transform: scale(1.35); opacity: .3; } }
+  .qz-t { font-size: 30px; font-weight: 800; }
+  .qz-s { font-size: 21px; font-weight: 600; opacity: .9; line-height: 1.4; }
+  .qz-done .qz-ring { display: none; }
+  .qz-ans { display: none; font-size: 40px; font-weight: 800; background: #fff; color: var(--c-green); border-radius: 22px; padding: 14px 22px; line-height: 1.25; animation: enter .7s cubic-bezier(.16,1,.3,1) both; }
+  .qz-done .qz-ans { display: block; }
 
   /* تركيز الريموت */
   .kfocus { outline: 7px solid var(--c-orange); outline-offset: 7px; }
@@ -280,25 +284,8 @@
   @keyframes zin { from { opacity: 0; transform: scale(var(--s0, .6)); } to { opacity: 1; transform: scale(var(--s1, 1.4)); } }
   .zoomer.out { animation: zfade .25s ease reverse both; }
 
-  /* صفحة التصويت في الجوال */
-  body.vote { margin: 0; min-height: 100vh; background: #EEF2FF; color: #1E1B4B; font-family: 'Baloo Bhaijaan 2', 'IBM Plex Sans Arabic', sans-serif; }
-  #voteWrap { max-width: 520px; margin: 0 auto; padding: 24px 18px 60px; box-sizing: border-box; }
-  .v-head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-  .v-head img { height: 54px; }
-  .v-head b { font-size: 18px; line-height: 1.3; }
-  .v-card { background: #fff; border: 4px solid #C7D2FE; border-radius: 26px; padding: 22px; box-shadow: 0 10px 22px rgba(30,27,75,.12); }
-  .v-tag { display: inline-block; background: #4F46E5; color: #fff; border-radius: 999px; padding: 4px 16px; font-weight: 800; font-size: 15px; }
-  .v-q { font-size: 28px; font-weight: 800; line-height: 1.3; margin: 12px 0 18px; }
-  .v-opt { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 60px; margin-bottom: 12px; border: 0; border-radius: 18px; padding: 0 20px; font: inherit; font-size: 21px; font-weight: 800; color: #fff; cursor: pointer; position: relative; overflow: hidden; box-shadow: 0 6px 0 rgba(0,0,0,.15); transition: transform .15s; }
-  .v-opt:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.15); }
-  .v-opt:nth-child(1) { background: #4F46E5; } .v-opt:nth-child(2) { background: #EA580C; } .v-opt:nth-child(3) { background: #15803D; } .v-opt:nth-child(4) { background: #DB2777; }
-  .v-opt:focus-visible { outline: 4px solid #FACC15; outline-offset: 3px; }
-  .v-res .pb { height: 52px; font-size: 19px; margin-bottom: 10px; }
-  .v-res .pb.mine { box-shadow: inset 0 0 0 4px #4F46E5; }
-  .v-msg { font-size: 22px; font-weight: 800; text-align: center; margin: 6px 0 16px; color: #15803D; }
-  .v-note { font-size: 15px; color: #475569; text-align: center; margin-top: 12px; }
   @media (prefers-reduced-motion: reduce) {
-    .zoomer, .zoomer > .zc, .kfocus, .pb.bump, .ann.poll .ann-img .vq,
+    .zoomer, .zoomer > .zc, .qz-num, .qz-ans,
     .blobs i, #stage header > *, .side, .ann, .honor, .events, .sched, .per, .ev, .avatar, .spark, .honor::after, .qr, .news-tag, .days.soon, .per.now, .ann-img img, .clock .colon, .meter i, .ann-text::before, .now-label::before { animation: none !important; }
     .confetti { display: none; }
   }
@@ -446,8 +433,6 @@
   <div class="setup-msg" id="setupMsg" hidden>النظام يحتاج إعداد Firebase أولًا.<br>افتح هذا الرابط من الجوال وأضف في آخره ‎#admin</div>
 </div>
 </div>
-
-<div id="voteWrap" hidden></div>
 
 <!-- ================= لوحة التحكم ================= -->
 <div id="adminWrap" hidden>
@@ -1805,7 +1790,7 @@ var DEMO = {
 })();
 
 var isAdmin = /admin/i.test(location.hash) || /[?&]admin\b/i.test(location.search);
-var isVote = !isAdmin && /vote/i.test(location.hash);
+var isVote = false;
 window.addEventListener('hashchange', function () { location.reload(); });
 var db = null, auth = null;
 if (FIREBASE_CONFIG && window.firebase) {
@@ -1820,7 +1805,8 @@ function pollOf(p) {
   if (!p || !p.q || !p.id) return null;
   var opts = (p.opts || []).filter(function (o) { return o && String(o).trim(); }).slice(0, 4);
   if (opts.length < 2) return null;
-  return { q: p.q, opts: opts, on: p.on !== false, id: String(p.id) };
+  var ans = parseInt(p.ans, 10); if (!(ans >= 0 && ans < opts.length)) ans = 0;
+  return { q: p.q, opts: opts, on: p.on !== false, id: String(p.id), ans: ans, secs: Math.max(5, parseInt(p.secs, 10) || 10) };
 }
 function normalize(v) {
   v = v || {};
@@ -1857,7 +1843,6 @@ function renderStatic() {
   el('schoolName').textContent = st.name;
   el('schoolSub').textContent = st.sub;
   el('qrBox').hidden = st.qr === false;
-  watchVotes();
   if (/^#[0-9a-f]{3,8}$/i.test(st.accent || '')) document.documentElement.style.setProperty('--accent', st.accent);
   if (logoKey !== st.logo) {
     logoKey = st.logo; var logo = el('logo'); logo.innerHTML = '';
@@ -1912,50 +1897,48 @@ function showAnn(i, instant) {
   var txt = el('annText'), img = el('annImg');
   function apply() {
     el('annTitle').textContent = a.t; el('annBody').textContent = a.b || '';
-    img.innerHTML = ''; el('pollBars').innerHTML = '';
+    img.innerHTML = ''; img.className = 'ann-img'; clearInterval(quizTimer); el('pollBars').innerHTML = '';
     if (a.type === 'poll' && data.poll) {
       el('ann').className = 'ann poll'; img.style.display = '';
-      var vq = '<div class="vq">' + (window.QRLib ? qrSVG(baseURL() + '#vote') : '') + '</div><div class="vt">سؤال اليوم</div><div class="vs">امسح بالجوال وصوّت، والنتيجة تتحرك هنا مباشرة</div>';
-      img.innerHTML = vq; renderPollBars(true);
+      startQuiz();
     } else if (a.img) { var im = new Image(); im.src = a.img; im.alt = ''; img.appendChild(im); img.style.display = ''; el('ann').className = 'ann'; }
     else { img.style.display = 'none'; el('ann').className = 'ann noimg'; }
-    var dots = el('dots'); dots.innerHTML = ''; var ds = parseInt(data.settings.annSeconds, 10); dots.style.setProperty('--d', (ds > 2 ? ds : 12) + 's');
+    var dots = el('dots'); dots.innerHTML = ''; var ds = parseInt(data.settings.annSeconds, 10); ds = ds > 2 ? ds : 12; if (a.type === 'poll' && data.poll) ds = Math.max(ds, data.poll.secs + 8); dots.style.setProperty('--d', ds + 's');
     if (data.ann.length > 1) data.ann.forEach(function (_, k) { var d = document.createElement('span'); d.className = 'dot' + (k === i ? ' on' : ''); dots.appendChild(d); });
     txt.classList.remove('fade'); img.classList.remove('fade');
   }
   if (instant) apply(); else { txt.classList.add('fade'); img.classList.add('fade'); setTimeout(apply, 500); }
 }
-var voteCounts = [], voteTotal = 0, voteRef = null, voteId = null;
-function watchVotes() {
-  var p = data && data.poll;
-  var id = p && p.on ? p.id : null;
-  if (id === voteId) return;
-  if (voteRef) voteRef.off(); voteRef = null; voteId = id; voteCounts = []; voteTotal = 0;
-  if (!id || !db) return;
-  voteRef = db.ref('votes/' + id);
-  voteRef.on('value', function (snap) {
-    var prev = voteCounts.slice(), c = [0, 0, 0, 0], t = 0;
-    snap.forEach(function (ch) { var v = ch.val(); if (typeof v === 'number' && v >= 0 && v < 4) { c[v]++; t++; } });
-    voteCounts = c; voteTotal = t;
-    var cur = data.ann[annIndex];
-    if (cur && cur.type === 'poll') renderPollBars(false, prev);
-  });
-}
-function renderPollBars(fresh, prev) {
+/* ---- سؤال اليوم: مسابقة على الشاشة بعدّ تنازلي ثم كشف الإجابة ---- */
+var quizTimer = null;
+function startQuiz() {
+  clearInterval(quizTimer);
   var p = data.poll; if (!p) return;
-  var box = el('pollBars'), max = Math.max.apply(null, voteCounts.concat([0]));
-  if (fresh || box.children.length !== p.opts.length + 1) {
-    box.innerHTML = '';
-    p.opts.forEach(function (o) { var r = document.createElement('div'); r.className = 'pb'; r.innerHTML = '<i></i><span></span><b></b>'; r.children[1].textContent = o; box.appendChild(r); });
-    var tt = document.createElement('div'); tt.className = 'poll-total'; box.appendChild(tt);
-  }
+  var box = el('pollBars'), img = el('annImg'), letters = ['أ', 'ب', 'ج', 'د'];
+  box.className = 'poll-bars'; box.innerHTML = '';
   p.opts.forEach(function (o, k) {
-    var r = box.children[k], n = voteCounts[k] || 0, pct = voteTotal ? Math.round(n / voteTotal * 100) : 0;
-    r.children[0].style.width = pct + '%'; r.children[2].textContent = ar(pct) + '٪';
-    r.classList.toggle('lead', voteTotal > 0 && n === max);
-    if (prev && (prev[k] || 0) < n) { r.classList.remove('bump'); void r.offsetWidth; r.classList.add('bump'); }
+    var r = document.createElement('div'); r.className = 'pb' + (k === p.ans ? ' right' : '');
+    r.innerHTML = '<span class="k"></span><span class="o"></span><svg class="ok" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    r.children[0].textContent = letters[k]; r.children[1].textContent = o; box.appendChild(r);
   });
-  box.lastChild.textContent = voteTotal ? 'عدد الأصوات: ' + ar(voteTotal) : 'كن أول من يصوّت!';
+  var C = 597, left = p.secs;
+  img.className = 'ann-img';
+  img.innerHTML = '<div class="qz-t">سؤال اليوم</div><div class="qz-ring"><svg viewBox="0 0 210 210" aria-hidden="true"><circle class="trk" cx="105" cy="105" r="95" fill="none" stroke-width="16"/><circle class="prg" cx="105" cy="105" r="95" fill="none" stroke-width="16" stroke-linecap="round" stroke-dasharray="' + C + '" stroke-dashoffset="0"/></svg><div class="qz-num"></div></div><div class="qz-s">فكّر في الإجابة… تنكشف بعد انتهاء العدّ</div><div class="qz-ans"></div>';
+  var num = img.querySelector('.qz-num'), prg = img.querySelector('.prg');
+  img.querySelector('.qz-ans').textContent = letters[p.ans] + ') ' + p.opts[p.ans];
+  function draw() {
+    num.textContent = ar(left); num.classList.remove('tick'); void num.offsetWidth; num.classList.add('tick');
+    prg.style.strokeDashoffset = String(C * (1 - left / p.secs));
+  }
+  draw();
+  quizTimer = setInterval(function () {
+    left--;
+    if (left > 0) { draw(); return; }
+    clearInterval(quizTimer);
+    box.classList.add('revealed'); img.classList.add('qz-done');
+    img.querySelector('.qz-s').textContent = 'الإجابة الصحيحة';
+    img.querySelector('.qz-t').textContent = 'أحسنت لمن عرفها!';
+  }, 1000);
 }
 /* ---- التنقل بالريموت واللمس ---- */
 var FOCUS = ['.ann', '.honor', '.events', '.sched', '.side'], focusIdx = -1, focusTimer = null, zoomEl = null;
@@ -1988,7 +1971,7 @@ function closeZoom(now) {
   return true;
 }
 var annTimer = null;
-function scheduleAnn() { clearTimeout(annTimer); var sec = parseInt(data.settings.annSeconds, 10); annTimer = setTimeout(nextAnn, (sec > 2 ? sec : 12) * 1000); }
+function scheduleAnn() { clearTimeout(annTimer); var sec = parseInt(data.settings.annSeconds, 10); sec = sec > 2 ? sec : 12; var cur = data.ann[annIndex]; if (cur && cur.type === 'poll' && data.poll) sec = Math.max(sec, data.poll.secs + 8); annTimer = setTimeout(nextAnn, sec * 1000); }
 function stepAnn(d) { if (data.ann.length > 1) { annIndex = (annIndex + d + data.ann.length) % data.ann.length; showAnn(annIndex); } scheduleAnn(); }
 function nextAnn() { stepAnn(1); }
 /* التفاعل بالريموت أو الكيبورد: الأسهم تقلّب الإعلانات */
@@ -2377,34 +2360,41 @@ var PANELS = {
   },
   poll: function () {
     var p = current.poll || {}, opts = (p.opts || []).slice(); while (opts.length < 4) opts.push('');
-    var draft = { q: p.q || '', opts: opts };
+    var draft = { q: p.q || '', opts: opts, ans: parseInt(p.ans, 10) || 0, secs: parseInt(p.secs, 10) || 10 };
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'سؤال يظهر على الشاشة ضمن الإعلانات مع باركود. الطلاب يمسحونه ويصوّتون من جوالاتهم، والنتيجة تتحرك على الشاشة مباشرة.' }));
+    wrap.appendChild(h('p', { class: 'hint', text: 'سؤال يظهر على الشاشة ضمن الإعلانات مع عدّ تنازلي، وبعدها تنكشف الإجابة الصحيحة. بدون جوالات.' }));
     var card = h('div', { class: 'card' });
-    var qi = h('textarea', { class: 'in', rows: 2, placeholder: 'مثال: ما مادتك المفضلة؟' }); qi.value = draft.q; qi.oninput = function () { draft.q = qi.value; };
+    var qi = h('textarea', { class: 'in', rows: 2, placeholder: 'مثال: ما عاصمة سلطنة عُمان؟' }); qi.value = draft.q; qi.oninput = function () { draft.q = qi.value; };
     card.appendChild(h('div', { class: 'fl' }, [h('label', { text: 'السؤال' }), qi]));
+    var letters = ['أ', 'ب', 'ج', 'د'];
     draft.opts.forEach(function (o, k) {
-      var oi = h('input', { class: 'in', type: 'text', placeholder: k < 2 ? 'خيار ' + (k + 1) : 'خيار ' + (k + 1) + ' (اختياري)' }); oi.value = o;
+      var oi = h('input', { class: 'in', type: 'text', placeholder: k < 2 ? 'الخيار ' + letters[k] : 'الخيار ' + letters[k] + ' (اختياري)' }); oi.value = o;
       oi.oninput = function () { draft.opts[k] = oi.value; };
-      card.appendChild(h('div', { class: 'fl' }, [h('label', { text: 'الخيار ' + (k + 1) }), oi]));
+      card.appendChild(h('div', { class: 'fl' }, [h('label', { text: 'الخيار ' + letters[k] }), oi]));
     });
-    card.appendChild(h('button', { class: 'btn gold full', type: 'button', text: 'نشر السؤال وبدء تصويت جديد', onclick: function () {
-      var ops = draft.opts.map(function (x) { return x.trim(); }).filter(Boolean);
-      if (!draft.q.trim() || ops.length < 2) { toast('اكتب السؤال وخيارين على الأقل'); return; }
-      var id = 'p' + Date.now();
-      save('poll', { q: draft.q.trim(), opts: ops, on: true, id: id }).then(render);
+    var sel = h('select', { class: 'in' });
+    letters.forEach(function (l, k) { var op = h('option', { value: k, text: 'الخيار ' + l }); if (k === draft.ans) op.selected = true; sel.appendChild(op); });
+    sel.onchange = function () { draft.ans = +sel.value; };
+    card.appendChild(h('div', { class: 'fl' }, [h('label', { text: 'الإجابة الصحيحة' }), sel]));
+    var si = h('input', { class: 'in', type: 'number', min: 5, inputmode: 'numeric' }); si.value = draft.secs; si.oninput = function () { draft.secs = parseInt(si.value, 10) || 10; };
+    card.appendChild(h('div', { class: 'fl' }, [h('label', { text: 'مدة التفكير بالثواني' }), si]));
+    card.appendChild(h('button', { class: 'btn gold full', type: 'button', text: 'نشر السؤال على الشاشة', onclick: function () {
+      var ops = draft.opts.map(function (x) { return x.trim(); });
+      var list = ops.filter(Boolean);
+      if (!draft.q.trim() || list.length < 2) { toast('اكتب السؤال وخيارين على الأقل'); return; }
+      if (!ops[draft.ans]) { toast('الإجابة الصحيحة لازم تكون خيار مكتوب'); return; }
+      var ansText = ops[draft.ans];
+      save('poll', { q: draft.q.trim(), opts: list, ans: list.indexOf(ansText), secs: Math.max(5, draft.secs), on: true, id: 'q' + Date.now() }).then(render);
     } }));
     wrap.appendChild(card);
     if (p.id) {
       var st = h('div', { class: 'card' });
-      st.appendChild(h('h3', { text: 'التصويت الحالي' }));
+      st.appendChild(h('h3', { text: 'السؤال الحالي' }));
       st.appendChild(h('p', { class: 'hint', style: 'margin:0', text: p.q || '' }));
-      var res = h('div', { class: 'hint', style: 'margin:0', text: '…' }); st.appendChild(res);
-      db.ref('votes/' + p.id).once('value').then(function (s) { var c = {}, t = 0; s.forEach(function (ch) { c[ch.val()] = (c[ch.val()] || 0) + 1; t++; }); res.textContent = (p.opts || []).map(function (o, k) { return o + ': ' + (c[k] || 0); }).join(' · ') + ' — المجموع ' + t; });
       st.appendChild(toggle('يظهر على الشاشة', p.on !== false, function (v) { save('poll/on', v); }));
-      st.appendChild(h('button', { class: 'btn del', type: 'button', text: 'حذف السؤال والأصوات', onclick: function () {
-        if (!confirm('متأكد؟ تنحذف النتائج.')) return;
-        Promise.all([db.ref('votes/' + p.id).remove(), ref('poll').remove()]).then(function () { toast('تم الحذف'); render(); });
+      st.appendChild(h('button', { class: 'btn del', type: 'button', text: 'حذف السؤال', onclick: function () {
+        if (!confirm('متأكد تبي تحذف السؤال؟')) return;
+        ref('poll').remove().then(function () { toast('تم الحذف'); render(); });
       } }));
       wrap.appendChild(st);
     }
@@ -2518,61 +2508,7 @@ function startAdmin() {
   });
 }
 
-/* =====================================================
-   صفحة التصويت (تُفتح من باركود الشاشة)
-   ===================================================== */
-function startVote() {
-  document.body.className = 'vote';
-  var wrap = el('voteWrap'); wrap.hidden = false;
-  function head() { return '<div class="v-head"><img src="school-logo.png" alt=""><b>' + DEFAULT.settings.name + '</b></div>'; }
-  if (!db) { wrap.innerHTML = head() + '<div class="v-card">التصويت غير متاح حاليًا.</div>'; return; }
-  var poll = null, counts = [], total = 0, vref = null;
-  function myKey(id) { return 'vote-' + id; }
-  function voterId() { try { var v = localStorage.getItem('voter-id'); if (!v) { v = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); localStorage.setItem('voter-id', v); } return v; } catch (e) { return 'v' + Math.random().toString(36).slice(2, 12); } }
-  function mine() { try { var m = localStorage.getItem(myKey(poll.id)); return m === null ? -1 : +m; } catch (e) { return -1; } }
-  function draw() {
-    if (!poll || !poll.on) { wrap.innerHTML = head() + '<div class="v-card"><span class="v-tag">سؤال اليوم</span><div class="v-q">لا يوجد تصويت الآن</div><div class="v-note">تابع الشاشة، قد يظهر سؤال جديد قريبًا.</div></div>'; return; }
-    var my = mine(), card = document.createElement('div'); card.className = 'v-card';
-    card.innerHTML = '<span class="v-tag">سؤال اليوم</span><div class="v-q"></div>';
-    card.querySelector('.v-q').textContent = poll.q;
-    if (my < 0) {
-      poll.opts.forEach(function (o, k) {
-        var b = document.createElement('button'); b.className = 'v-opt'; b.type = 'button'; b.textContent = o;
-        b.onclick = function () {
-          card.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
-          db.ref('votes/' + poll.id + '/' + voterId()).set(k).then(function () {
-            try { localStorage.setItem(myKey(poll.id), k); } catch (e) {} draw();
-          }).catch(function () { try { localStorage.setItem(myKey(poll.id), k); } catch (e) {} draw(); });
-        };
-        card.appendChild(b);
-      });
-      var n = document.createElement('div'); n.className = 'v-note'; n.textContent = 'صوت واحد لكل جوال، وتظهر النتيجة على شاشة المدرسة فورًا.'; card.appendChild(n);
-    } else {
-      var msg = document.createElement('div'); msg.className = 'v-msg'; msg.textContent = 'شكرًا! وصل صوتك للشاشة'; card.appendChild(msg);
-      var res = document.createElement('div'); res.className = 'v-res';
-      poll.opts.forEach(function (o, k) {
-        var pct = total ? Math.round((counts[k] || 0) / total * 100) : 0;
-        var r = document.createElement('div'); r.className = 'pb' + (k === my ? ' mine' : '');
-        r.innerHTML = '<i></i><span></span><b></b>'; r.children[1].textContent = o; r.children[2].textContent = ar(pct) + '٪';
-        res.appendChild(r); setTimeout(function () { r.children[0].style.width = pct + '%'; }, 30);
-      });
-      card.appendChild(res);
-      var t = document.createElement('div'); t.className = 'v-note'; t.textContent = 'عدد الأصوات: ' + ar(total); card.appendChild(t);
-    }
-    wrap.innerHTML = head(); wrap.appendChild(card);
-  }
-  db.ref('screen/poll').on('value', function (snap) {
-    poll = pollOf(snap.val());
-    if (vref) vref.off(); vref = null; counts = []; total = 0;
-    if (poll && poll.on) {
-      vref = db.ref('votes/' + poll.id);
-      vref.on('value', function (s) { var c = [0, 0, 0, 0], t = 0; s.forEach(function (ch) { var v = ch.val(); if (typeof v === 'number') { c[v]++; t++; } }); counts = c; total = t; draw(); });
-    }
-    draw();
-  });
-}
-
-if (isAdmin) startAdmin(); else if (isVote) startVote(); else startTV();
+if (isAdmin) startAdmin(); else startTV();
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
 }
