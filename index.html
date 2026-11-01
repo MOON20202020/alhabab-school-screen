@@ -73,7 +73,7 @@
   .now-left { align-self: stretch; background: var(--c-card); color: var(--c-mfg); padding: 4px 20px 0; font-size: 28px; font-weight: 600; }
   .now-left b { color: var(--c-orange-d); font-size: 36px; }
   .meter { align-self: stretch; background: var(--c-card); border-radius: 0 0 26px 26px; padding: 18px 26px 26px; box-sizing: content-box; height: 18px; }
-  .meter i { display: block; height: 18px; width: 0; border-radius: 999px; min-width: 18px; background: var(--c-orange); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); transition: width 1s linear; }
+  .dev .meter i { display: block; margin-inline-start: 0; float: right; height: 18px; width: 0; border-radius: 999px; min-width: 18px; background: var(--c-orange); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); transition: width 1s linear; }
   .meter { background: linear-gradient(#E0E7FF, #E0E7FF) content-box, #fff; background-clip: content-box, border-box; }
   .meter { border-radius: 0 0 26px 26px; }
   /* الصف المثالي */
@@ -377,6 +377,13 @@
   .now-card { background: #FEF3C7; }
   .btn.stop { background: var(--danger); color: #fff; }
   .live-card { box-shadow: inset 0 0 0 3px var(--accent); }
+  .badge.lf { align-self: flex-start; font-weight: 600; }
+  .badge.lf.ok { background: #DCFCE7; color: #166534; }
+  .badge.lf.warn { background: #FEE2E2; color: #991B1B; }
+  .badge.lf.busy { background: #E0E7FF; color: #3730A3; }
+  .dev { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid #E5E7EB; }
+  .dev .meter { display: block; height: 10px; min-height: 0; padding: 0; margin: 0; border: 0; box-shadow: none; border-radius: 999px; background: #E5E7EB; overflow: hidden; }
+  .dev .meter i { display: block; margin-inline-start: 0; float: right; height: 100%; background: var(--ok); border-radius: inherit; }
   .mrow { display: flex; gap: 12px; align-items: flex-end; }
   .mthumb { position: relative; width: 96px; height: 64px; border-radius: 10px; background: #DDE3EC; overflow: hidden; flex-shrink: 0; display: grid; place-items: center; font-size: 13px; color: var(--ink2); }
   .mthumb img { width: 100%; height: 100%; object-fit: cover; }
@@ -1813,7 +1820,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-01-v3';
+var APP_VERSION = '2026-11-01-v4';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2270,7 +2277,7 @@ function playMedia(item, loop) {
     node = document.createElement('div'); node.className = 'm-loading'; node.textContent = 'جاري تحميل الفيديو…';
     mediaUntil = loop ? 0 : now + 10 * 60 * 1000;
     var myKey = mediaKey;
-    loadFileVideo(src.id, src.mime).then(function (url) {
+    loadFileVideo(src.id, src.mime, item.size).then(function (url) {
       if (mediaKey !== myKey) return;
       var v = document.createElement('video');
       v.src = url; v.autoplay = true; v.muted = !sound; v.playsInline = true; v.loop = !!loop;
@@ -2279,7 +2286,18 @@ function playMedia(item, loop) {
       if (!loop) mediaUntil = dur ? Date.now() + dur * 1000 : Date.now() + 15 * 60 * 1000;
       box.innerHTML = ''; box.appendChild(v);
       tryPlay(v, sound);
-    }).catch(function () { if (!loop) nextMedia(); else node.textContent = 'تعذر تحميل الفيديو'; });
+    }).catch(function (e) {
+      if (!loop) return nextMedia();
+      if (e && e.message === 'notready') { // الفيديو كبير ولسا ينتقل للشاشة: نعرض التقدم وننتظر
+        var paint = function () {
+          if (mediaKey !== myKey) return clearInterval(paint._t);
+          var s = localState[src.id];
+          if (s && s.done) { clearInterval(paint._t); delete fileCache[src.id]; mediaKey = ''; return; }
+          node.textContent = storageApproved() ? 'جاري نقل الفيديو إلى الشاشة… ' + (s && s.n ? Math.floor(s.got / s.n * 100) : 0) + '٪' : 'هذا الفيديو كبير، ويحتاج اعتماد هذه الشاشة للتخزين من لوحة التحكم';
+        };
+        paint(); paint._t = setInterval(paint, 2000);
+      } else node.textContent = 'تعذر تحميل الفيديو';
+    });
   } else if (src.kind === 'youtube') {
     node = document.createElement('iframe'); node.allow = 'autoplay; encrypted-media';
     node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound && audioUnlocked ? 0 : 1);
@@ -2332,21 +2350,145 @@ function unlockAudio() {
 document.addEventListener('pointerdown', function () { if (!isAdmin) unlockAudio(); }, true);
 document.addEventListener('keydown', function () { if (!isAdmin) unlockAudio(); }, true);
 function b64ToBytes(b) { var bin = atob(b), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
-function loadFileVideo(id, mime) {
-  if (fileCache[id]) return fileCache[id];
+function vidType(mime) { return /quicktime|x-m4v|^$/i.test(mime || '') ? 'video/mp4' : mime; }
+function cloudVideo(id, mime) { // نسخة السحابة: نجمع الأجزاء في الذاكرة (للملفات الصغيرة فقط)
   if (!db) return Promise.reject(new Error('no db'));
-  fileCache[id] = db.ref('files/' + id + '/c').once('value').then(function (snap) {
+  return db.ref('files/' + id + '/c').once('value').then(function (snap) {
     var parts = [], keys = [];
     snap.forEach(function (ch) { keys.push(+ch.key); parts[+ch.key] = ch.val(); });
     if (!keys.length) throw new Error('empty');
-    var blobs = parts.map(b64ToBytes);
-    var t = /quicktime|x-m4v|^$/i.test(mime || '') ? 'video/mp4' : mime;
-    return URL.createObjectURL(new Blob(blobs, { type: t }));
+    return URL.createObjectURL(new Blob(parts.map(b64ToBytes), { type: vidType(mime) }));
   });
+}
+var CLOUD_PLAY_MAX = 150 * 1048576; // أكبر من كذا ما نشغله من السحابة، ننتظر لين يتخزن في الشاشة
+function loadFileVideo(id, mime, size) {
+  if (fileCache[id]) return fileCache[id];
+  fileCache[id] = lsMeta(id).then(function (mt) { if (mt && mt.done) return lsBlobURL(id, mime); throw new Error('nolocal'); })
+    .catch(function () {
+      if ((size || 0) > CLOUD_PLAY_MAX) throw new Error('notready');
+      return cloudVideo(id, mime);
+    });
   fileCache[id].catch(function () { delete fileCache[id]; });
   return fileCache[id];
 }
-function mediaList() { return data.media.filter(function (m) { return m.show !== false; }); }
+
+/* ---- تخزين الفيديو داخل الشاشة نفسها (IndexedDB) ----
+   الجوال يرفع الفيديو للسحابة مؤقتًا، الشاشة المعتمدة تنزله وتحفظه عندها،
+   وبعدها لوحة التحكم تمسح نسخة السحابة. الحذف من اللوحة يمسحه من الشاشة. */
+var DEV_ID = (function () {
+  try { var d = localStorage.getItem('alhabab-dev'); if (!d) { d = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); localStorage.setItem('alhabab-dev', d); } return d; } catch (e) { return 'dtemp'; }
+})();
+var LS = {};
+function lsOpen() {
+  if (LS.p) return LS.p;
+  LS.p = new Promise(function (res, rej) {
+    if (!window.indexedDB) return rej(new Error('no idb'));
+    var r = indexedDB.open('alhabab-local', 1);
+    r.onupgradeneeded = function () { r.result.createObjectStore('chunks'); r.result.createObjectStore('meta'); };
+    r.onsuccess = function () { res(r.result); }; r.onerror = function () { rej(r.error); };
+  });
+  LS.p.catch(function () {});
+  return LS.p;
+}
+function lsReq(store, mode, fn) {
+  return lsOpen().then(function (d) { return new Promise(function (res, rej) {
+    var tx = d.transaction(store, mode), q = fn(tx.objectStore(store)), out;
+    if (q) q.onsuccess = function () { out = q.result; };
+    tx.oncomplete = function () { res(out); }; tx.onerror = tx.onabort = function () { rej(tx.error || new Error('idb')); };
+  }); });
+}
+function lsRange(id) { return IDBKeyRange.bound(id + '/', id + '/￿'); }
+function lsMeta(id) { return lsReq('meta', 'readonly', function (s) { return s.get(id); }); }
+function lsAllMeta() { return lsReq('meta', 'readonly', function (s) { return s.getAll(); }); }
+function lsKeys(id) { return lsReq('chunks', 'readonly', function (s) { return s.getAllKeys(lsRange(id)); }); }
+function lsPut(store, key, val) { return lsReq(store, 'readwrite', function (s) { s.put(val, key); }); }
+function lsDelete(id) {
+  return lsReq('chunks', 'readwrite', function (s) { s.delete(lsRange(id)); }).then(function () { return lsReq('meta', 'readwrite', function (s) { s.delete(id); }); });
+}
+function lsBlobURL(id, mime) {
+  return lsReq('chunks', 'readonly', function (s) { return s.getAll(lsRange(id)); }).then(function (parts) {
+    if (!parts || !parts.length) throw new Error('empty');
+    return URL.createObjectURL(new Blob(parts, { type: vidType(mime) }));
+  });
+}
+var localState = {}, syncing = false, syncReady = false;
+function storageApproved() { return !!(raw && raw.devices && raw.devices[DEV_ID]); }
+function wantedLocal() { return storageApproved() ? data.media.filter(function (m) { return m.file && m.local; }) : []; }
+function localReady(m) { var s = localState[m.file]; return !!(s && s.done); }
+function devName() {
+  var u = navigator.userAgent;
+  if (/Android/i.test(u)) return /TV|AFT|BRAVIA|GoogleTV|Chromecast|SMART/i.test(u) ? 'تلفاز أندرويد' : 'جهاز أندرويد';
+  return /iPhone|iPad/i.test(u) ? 'آيفون أو آيباد' : /Macintosh/i.test(u) ? 'ماك' : /Windows/i.test(u) ? 'ويندوز' : /Linux/i.test(u) ? 'لينكس' : 'جهاز';
+}
+function reportDevice() {
+  if (!db) return;
+  clearTimeout(reportDevice._t);
+  reportDevice._t = setTimeout(function () {
+    var est = navigator.storage && navigator.storage.estimate ? navigator.storage.estimate() : Promise.resolve({});
+    est.catch(function () { return {}; }).then(function (e) {
+      var files = {};
+      Object.keys(localState).forEach(function (k) { var s = localState[k]; files[k] = { n: s.n || 0, got: s.got || 0, done: !!s.done, err: s.err || '' }; });
+      db.ref('device/' + DEV_ID).set({ name: devName(), w: screen.width + '×' + screen.height, at: firebase.database.ServerValue.TIMESTAMP, quota: e.quota || 0, usage: e.usage || 0, files: files }).catch(function () {});
+    });
+  }, 700);
+}
+function syncLocal() {
+  if (!db || !syncReady) return;
+  var want = wantedLocal(), ids = {};
+  want.forEach(function (m) { ids[m.file] = m; });
+  lsAllMeta().then(function (metas) {
+    var chain = Promise.resolve();
+    (metas || []).forEach(function (mt) {
+      if (!ids[mt.id]) chain = chain.then(function () { // انحذف من اللوحة: نمسحه من الشاشة
+        delete localState[mt.id];
+        if (fileCache[mt.id]) { fileCache[mt.id].then(function (u) { URL.revokeObjectURL(u); }).catch(function () {}); delete fileCache[mt.id]; }
+        return lsDelete(mt.id);
+      });
+      else if (mt.done) localState[mt.id] = { n: mt.n, got: mt.n, done: true };
+    });
+    Object.keys(localState).forEach(function (k) { if (!ids[k]) delete localState[k]; });
+    return chain.then(function () { reportDevice(); pumpDownloads(want); });
+  }).catch(function () {});
+}
+function pumpDownloads(want) {
+  if (syncing) return;
+  var now = Date.now();
+  var next = want.filter(function (m) { var s = localState[m.file]; return !(s && (s.done || s.err === 'missing' || (s.errAt && now - s.errAt < 60000))); })[0];
+  if (!next) return;
+  syncing = true;
+  downloadLocal(next).catch(function (e) {
+    var s = localState[next.file] = localState[next.file] || {};
+    var msg = String((e && (e.name === 'QuotaExceededError' ? 'full' : e.message)) || e);
+    s.err = /missing/.test(msg) ? 'missing' : /full|quota/i.test(msg) ? 'full' : msg.slice(0, 60); s.errAt = Date.now();
+  }).then(function () { syncing = false; reportDevice(); setTimeout(syncLocal, 1500); });
+}
+function downloadLocal(m) {
+  var id = m.file;
+  return db.ref('files/' + id + '/meta').once('value').then(function (ms) {
+    var meta = ms.val();
+    if (!meta || !meta.n) throw new Error('missing');
+    var n = meta.n;
+    return lsPut('meta', id, { id: id, n: n, mime: meta.mime || m.mime, size: meta.size || m.size, done: false }).then(function () { return lsKeys(id); }).then(function (keys) {
+      var have = {}; (keys || []).forEach(function (k) { have[+String(k).split('/')[1]] = 1; });
+      var todo = []; for (var i = 0; i < n; i++) if (!have[i]) todo.push(i);
+      var st = localState[id] = { n: n, got: n - todo.length, done: false }, pos = 0;
+      reportDevice();
+      function worker() {
+        if (pos >= todo.length) return Promise.resolve();
+        if (!data.media.some(function (x) { return x.file === id; })) return Promise.reject(new Error('cancelled'));
+        var i = todo[pos++];
+        return db.ref('files/' + id + '/c/' + i).once('value').then(function (s) {
+          var v = s.val(); if (!v) throw new Error('missing');
+          return lsPut('chunks', id + '/' + ('0000' + i).slice(-5), new Blob([b64ToBytes(v)]));
+        }).then(function () { st.got++; if (st.got % 8 === 0) reportDevice(); return worker(); });
+      }
+      return Promise.all([worker(), worker(), worker()]);
+    }).then(function () {
+      return lsPut('meta', id, { id: id, n: n, mime: meta.mime || m.mime, size: meta.size || m.size, done: true, at: Date.now() });
+    }).then(function () { localState[id] = { n: n, got: n, done: true }; delete fileCache[id]; });
+  });
+}
+function mediaList() { return data.media.filter(function (m) { return m.show !== false && !(m.file && (m.size || 0) > CLOUD_PLAY_MAX && !localReady(m)); }); }
 function nextMedia() {
   var list = mediaList(); mediaIdx++;
   if (mediaIdx >= list.length) { mode = 'main'; mainUntil = Date.now() + mainSeconds() * 1000; hideMedia(); }
@@ -2412,7 +2554,11 @@ function startTV() {
     try { localStorage.setItem('school-screen-v2', JSON.stringify(raw)); } catch (e) {}
     data = normalize(raw);
     renderStatic();
+    syncReady = true; syncLocal();
   });
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) {}
+  db.ref('.info/connected').on('value', function (s) { if (s.val() === true) reportDevice(); });
+  setInterval(syncLocal, 5 * 60 * 1000);
 }
 
 /* =====================================================
@@ -2505,17 +2651,23 @@ function pdfToPages(file, max) {
     return next().then(function (pages) { if (pdf.numPages > n) toast('عرضت أول ' + n + ' صفحة فقط'); return pages; });
   });
 }
-function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغيرة ونخزنها في قاعدة البيانات
-  var CH = 700 * 1024, id = 'v' + Date.now().toString(36), n = Math.ceil(f.size / CH), k = 0;
+function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغيرة ونرفعها (٤ أجزاء بالتوازي)
+  var CH = 700 * 1024, id = 'v' + Date.now().toString(36), n = Math.ceil(f.size / CH), pos = 0, sent = 0;
   function b64(buf) { var u = new Uint8Array(buf), s = '', step = 0x8000; for (var i = 0; i < u.length; i += step) s += String.fromCharCode.apply(null, u.subarray(i, i + step)); return btoa(s); }
-  function next() {
-    if (k >= n) return db.ref('files/' + id + '/meta').set({ name: f.name, size: f.size, mime: f.type, n: n }).then(function () { return id; });
-    var i = k; k++;
-    toast('رفع الفيديو ' + Math.round(i / n * 100) + '٪');
-    return f.slice(i * CH, Math.min(f.size, (i + 1) * CH)).arrayBuffer().then(function (buf) { return db.ref('files/' + id + '/c/' + i).set(b64(buf)); }).then(next);
+  uploading = true;
+  function worker() {
+    if (pos >= n) return Promise.resolve();
+    var i = pos++;
+    return f.slice(i * CH, Math.min(f.size, (i + 1) * CH)).arrayBuffer().then(function (buf) { return db.ref('files/' + id + '/c/' + i).set(b64(buf)); })
+      .then(function () { sent++; toast('رفع «' + f.name + '» ' + Math.floor(sent / n * 100) + '٪ — خلّ الصفحة مفتوحة'); return worker(); });
   }
-  return next();
+  return Promise.all([worker(), worker(), worker(), worker()]).then(function () {
+    return db.ref('files/' + id + '/meta').set({ name: f.name, size: f.size, mime: f.type, n: n });
+  }).then(function () { uploading = false; return id; }, function (e) { uploading = false; db.ref('files/' + id).remove().catch(function () {}); throw e; });
 }
+var uploading = false;
+window.addEventListener('beforeunload', function (e) { if (uploading) { e.preventDefault(); e.returnValue = ''; } });
+var MAX_VIDEO = 600 * 1048576;
 function uploadFiles(files) {
   if (!files.length) return;
   var chain = Promise.resolve(), done = 0;
@@ -2526,8 +2678,8 @@ function uploadFiles(files) {
         return pdfToPages(f, 25).then(function (pages) { return ref('media').push().set({ label: name, pages: pages, dur: 10, show: false, pin: false }); }).then(function () { done++; });
       }
       if (/^video\//.test(f.type) || /\.(mp4|webm|mov|m4v)$/i.test(f.name)) {
-        if (f.size > 60 * 1024 * 1024) { toast('الفيديو أكبر من ٦٠ ميجا، قصّه أو ضغطه أولًا'); return; }
-        return uploadVideo(f).then(function (id) { return ref('media').push().set({ label: name, file: id, mime: f.type || 'video/mp4', size: f.size, dur: 0, show: false, pin: false }); }).then(function () { done++; });
+        if (f.size > MAX_VIDEO) { toast('الفيديو أكبر من ٦٠٠ ميجا، قصّه أو ضغطه أولًا'); return; }
+        return uploadVideo(f).then(function (id) { return ref('media').push().set({ label: name, file: id, mime: f.type || 'video/mp4', size: f.size, local: true, dur: 0, show: false, pin: false }); }).then(function () { done++; });
       }
       if (/^image\//.test(f.type)) {
         toast('جاري رفع ' + name);
@@ -2583,7 +2735,7 @@ var PANELS = {
     var items = vals(current.media).reverse(), now = Date.now();
     var showing = items.filter(function (m) { return m.pin && (!m.pinUntil || m.pinUntil > now); })[0];
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو فيديو أو ملف PDF من جوالك (الفيديو حتى ٦٠ ميجا، ويفضّل MP4)، أو أضف رابط يوتيوب، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
+    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو فيديو أو ملف PDF من جوالك (الفيديو حتى ٦٠٠ ميجا، ويفضّل MP4)، أو أضف رابط يوتيوب، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
     if (showing) {
       wrap.appendChild(h('div', { class: 'card now-card' }, [
         h('b', { text: 'يُعرض الآن على الشاشة: ' + (showing.label || 'ملف') }),
@@ -2591,6 +2743,8 @@ var PANELS = {
         h('button', { class: 'btn full', type: 'button', text: 'إيقاف العرض والرجوع للشاشة', onclick: function () { ref('media/' + showing._id).update({ pin: false, pinUntil: null }).then(function () { toast('رجعت الشاشة الرئيسية'); render(); }); } })
       ]));
     }
+    wrap.appendChild(h('div', { class: 'card', id: 'storeCard' }));
+    setTimeout(paintStorage, 0);
     var file = h('input', { type: 'file', accept: 'image/*,video/*,application/pdf', multiple: true, hidden: true });
     file.addEventListener('change', function () { uploadFiles(Array.prototype.slice.call(file.files)); file.value = ''; });
     wrap.appendChild(h('div', { class: 'card' }, [
@@ -2606,13 +2760,14 @@ var PANELS = {
       var thumb = h('div', { class: 'mthumb' });
       var src = (it.pages && it.pages[0]) || it.img;
       if (src) thumb.appendChild(h('img', { src: src, alt: '' })); else thumb.textContent = (it.url || it.file) ? '▶ فيديو' : '—';
-      if (it.file && it.size) thumb.appendChild(h('span', { class: 'mpages', text: Math.round(it.size / 1048576 * 10) / 10 + ' ميجا' }));
+      if (it.file && it.size) thumb.appendChild(h('span', { class: 'mpages', text: fmtGB(it.size) }));
       if (it.pages) thumb.appendChild(h('span', { class: 'mpages', text: it.pages.length + ' صفحة' }));
       var durSel = h('select', { class: 'in', 'aria-label': 'مدة العرض' });
       [[0, 'حتى أوقفه'], [5, '٥ دقائق'], [15, '١٥ دقيقة'], [30, '٣٠ دقيقة'], [60, 'ساعة']].forEach(function (o) { durSel.appendChild(h('option', { value: o[0], text: o[1] })); });
       var fields = [
         h('div', { class: 'mrow' }, [thumb, h('div', { class: 'fl', style: 'flex:1' }, [field('الاسم', it.label, function (v) { save(p + '/label', v); })])])
       ];
+      if (it.file) { var lst = localStatus(it); fields.push(h('span', { class: 'badge lf ' + lst.c, 'data-lf': it._id, text: lst.t })); }
       if (!src && !it.file) fields.push(field('رابط الفيديو', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://youtube.com/…' }));
       fields.push(field(it.pages ? 'ثواني لكل صفحة' : (src ? 'المدة بالثواني في العرض التلقائي' : 'المدة بالثواني (فاضي = لين يخلص)'), it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }));
       if (it.file || it.url) fields.push(toggle('بالصوت', it.sound !== false, function (v) { save(p + '/sound', v); }));
@@ -2626,7 +2781,7 @@ var PANELS = {
         upd[it._id + '/pin'] = true; upd[it._id + '/pinUntil'] = mins ? Date.now() + mins * 60000 : null;
         ref('media').update(upd).then(function () { toast('ينعرض الآن على الشاشة'); render(); }).catch(function (e) { toast('ما انحفظ: ' + e.message); });
       } })]));
-      fields.push(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () { if (confirm('متأكد تبي تحذفه؟')) Promise.all([ref(p).remove(), it.file ? db.ref('files/' + it.file).remove() : null]).then(function () { toast('تم الحذف'); render(); }); } }));
+      fields.push(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () { if (confirm(it.file ? 'متأكد تبي تحذفه؟ بينمسح من الشاشة كمان.' : 'متأكد تبي تحذفه؟')) Promise.all([ref(p).remove(), it.file ? db.ref('files/' + it.file).remove() : null]).then(function () { toast('تم الحذف'); render(); }); } }));
       wrap.appendChild(h('div', { class: 'card' + (live ? ' live-card' : '') }, fields));
     });
     return wrap;
@@ -2784,6 +2939,78 @@ var PANELS = {
   }
 };
 
+/* ---- الشاشات المتصلة والتخزين عليها ---- */
+var devices = {};
+function watchDevices() {
+  if (watchDevices.on) return; watchDevices.on = true;
+  db.ref('device').on('value', function (snap) { devices = snap.val() || {}; cleanupCloud(); paintStorage(); }, function () { watchDevices.on = false; });
+}
+function approvedIds() { return Object.keys((current && current.devices) || {}); }
+function fmtGB(b) { var g = b / 1073741824; return g >= 1 ? (Math.round(g * 10) / 10) + ' جيجا' : Math.round(b / 1048576) + ' ميجا'; }
+function ago(t) { var m = Math.round((Date.now() - (t || 0)) / 60000); return m < 2 ? 'متصلة الآن' : m < 60 ? 'آخر ظهور قبل ' + m + ' دقيقة' : m < 1440 ? 'آخر ظهور قبل ' + Math.round(m / 60) + ' ساعة' : 'آخر ظهور قبل ' + Math.round(m / 1440) + ' يوم'; }
+function cleanupCloud() { // كل الشاشات المعتمدة حفظت الفيديو؟ نمسح نسخته من السحابة عشان تبقى المساحة فاضية
+  var ap = approvedIds(); if (!ap.length || !current.media) return;
+  Object.keys(current.media).forEach(function (k) {
+    var m = current.media[k];
+    if (!m || !m.file || !m.local || m.cloudGone) return;
+    var all = ap.every(function (d) { var f = devices[d] && devices[d].files && devices[d].files[m.file]; return f && f.done; });
+    if (!all) return;
+    m.cloudGone = true;
+    db.ref('files/' + m.file).remove().then(function () { return ref('media/' + k + '/cloudGone').set(true); }).catch(function () { m.cloudGone = false; });
+  });
+}
+function localStatus(it) {
+  if (!it.local) return { t: 'محفوظ في السحابة', c: '' };
+  var ap = approvedIds();
+  if (!ap.length) return (it.size || 0) > CLOUD_PLAY_MAX ? { t: 'يحتاج اعتماد شاشة للتخزين', c: 'warn' } : { t: 'يشتغل من السحابة لين تعتمد شاشة', c: '' };
+  var d = devices[ap[0]] || {}, f = d.files && d.files[it.file];
+  if (f && f.done) return { t: 'محفوظ على الشاشة ✓', c: 'ok' };
+  if (f && f.err === 'full') return { t: 'مساحة الشاشة ممتلئة', c: 'warn' };
+  if ((f && f.err === 'missing') || it.cloudGone) return { t: 'مو موجود على الشاشة، احذفه وارفعه من جديد', c: 'warn' };
+  if (f && f.n) return { t: 'ينتقل للشاشة ' + Math.floor(f.got / f.n * 100) + '٪', c: 'busy' };
+  return { t: 'بانتظار تشغيل الشاشة عشان ينتقل لها', c: 'busy' };
+}
+function paintStorage() {
+  document.querySelectorAll('[data-lf]').forEach(function (chip) {
+    var it = current.media && current.media[chip.dataset.lf]; if (!it) return;
+    var st = localStatus(it); chip.textContent = st.t; chip.className = 'badge lf ' + st.c;
+  });
+  var box = el('storeCard'); if (!box) return;
+  box.innerHTML = '';
+  box.appendChild(h('h3', { text: 'التخزين على الشاشة' }));
+  box.appendChild(h('p', { class: 'hint', text: 'الفيديو ينرفع مؤقتًا، بعدين الشاشة المعتمدة تنزّله وتحفظه عندها (حتى ٦٠٠ ميجا للمقطع)، وينمسح من السحابة تلقائيًا. لما تحذف الفيديو من هنا ينمسح من الشاشة كمان.' }));
+  var ap = (current && current.devices) || {};
+  var list = Object.keys(devices).map(function (k) { return Object.assign({ id: k }, devices[k]); })
+    .filter(function (d) { return ap[d.id] || Date.now() - (d.at || 0) < 14 * 86400000; })
+    .sort(function (a, b) { return (ap[b.id] ? 1 : 0) - (ap[a.id] ? 1 : 0) || (b.at || 0) - (a.at || 0); }).slice(0, 6);
+  if (!list.length) box.appendChild(h('p', { class: 'hint', style: 'margin:0', text: 'ما فيه شاشة متصلة بعد. افتح رابط الشاشة على التلفاز، وبتظهر هنا عشان تعتمدها.' }));
+  list.forEach(function (d) {
+    var on = !!ap[d.id], free = d.quota ? Math.max(0, d.quota - (d.usage || 0)) : 0;
+    var info = [d.w ? '\u2066' + d.w + '\u2069' : '', ago(d.at)].filter(Boolean).join(' · ');
+    var kids = [
+      h('div', { class: 'item-head' }, [h('b', { text: (d.name || 'جهاز') + (on ? ' — معتمدة' : '') }), h('span', { class: 'badge' + (on ? ' pin' : ''), text: on ? 'تخزين' : 'غير معتمدة' })]),
+      h('span', { class: 'hint', style: 'margin:0', text: info })
+    ];
+    if (on && d.quota) {
+      var pct = Math.min(100, Math.round((d.usage || 0) / d.quota * 100));
+      kids.push(h('div', { class: 'meter', role: 'img', 'aria-label': 'المساحة المستخدمة ' + pct + '٪' }, [h('i', { style: 'width:' + Math.max(2, pct) + '%' })]));
+      kids.push(h('span', { class: 'hint', style: 'margin:0', text: 'المستخدم ' + fmtGB(d.usage || 0) + ' · المتبقي تقريبًا ' + fmtGB(free) }));
+    }
+    kids.push(on
+      ? h('button', { class: 'btn del', type: 'button', text: 'إلغاء الاعتماد', onclick: function () {
+          if (!confirm('الفيديوهات المحفوظة في هذه الشاشة بتنمسح منها. متأكد؟')) return;
+          ref('devices/' + d.id).remove().then(function () { delete current.devices[d.id]; toast('انلغى الاعتماد'); render(); });
+        } })
+      : h('div', { class: 'row' }, [
+          h('button', { class: 'btn gold', type: 'button', text: 'اعتمدها للتخزين', onclick: function () {
+            ref('devices/' + d.id).set({ name: d.name || 'شاشة', at: Date.now() }).then(function () { current.devices = current.devices || {}; current.devices[d.id] = true; toast('اعتمدت الشاشة، الفيديوهات بتنتقل لها'); render(); });
+          } }),
+          h('button', { class: 'btn ghost', type: 'button', text: 'إخفاء', onclick: function () { db.ref('device/' + d.id).remove(); } })
+        ]));
+    box.appendChild(h('div', { class: 'dev' }, kids));
+  });
+}
+
 function render() {
   return ref().once('value').then(function (snap) {
     current = snap.val() || {};
@@ -2827,7 +3054,7 @@ function startAdmin() {
   });
   auth.onAuthStateChanged(function (u) {
     el('loginView').hidden = !!u; el('admin').hidden = !u;
-    if (u) render();
+    if (u) { render(); watchDevices(); }
   });
 }
 
