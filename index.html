@@ -391,7 +391,7 @@
         <div class="qr" id="qr" aria-hidden="true"></div>
         <div class="qr-t"><b>لوحة التحكم</b><span>امسح الرمز بكاميرا الجوال</span></div>
       </div>
-      <div class="best" id="best" hidden>
+      <div class="best" id="best">
         <svg class="bt-ic" width="66" height="66" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
         <div class="bt-tx">
           <div class="bt-t">الصف المثالي هذا الأسبوع</div>
@@ -1906,8 +1906,12 @@ function bestWhys(b) {
 }
 function renderBest() {
   var b = data.best || {}, box = el('best');
-  if (!b.cls) { box.hidden = true; bestKey = ''; return; }
   box.hidden = false;
+  if (!b.cls) { // قبل الاختيار: بطاقة تشويقية بدل الإخفاء
+    el('bestCls').textContent = 'من سيكون؟';
+    el('bestWhy').innerHTML = '<span class="bt-b k-x0">يُعلن قريبًا</span>';
+    bestKey = ''; return;
+  }
   var whys = bestWhys(b), key = b.cls + '|' + whys.join(',');
   el('bestCls').textContent = b.cls;
   var w = el('bestWhy'); w.innerHTML = ''; var xi = 0;
