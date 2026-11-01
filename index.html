@@ -84,7 +84,9 @@
   .bt-tx { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
   .bt-t { font-size: 20px; font-weight: 700; color: #3F3A1C; }
   .bt-c { font-size: 38px; font-weight: 800; line-height: 1.15; }
-  .bt-b { margin-top: 4px; padding: 3px 16px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #fff; background: var(--c-primary); }
+  .bt-bs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+  .bt-b.k-x0 { background: var(--c-sky); } .bt-b.k-x1 { background: var(--c-teal); } .bt-b.k-x2 { background: var(--c-red); } .bt-b.k-x3 { background: #7C3AED; }
+  .bt-b { display: inline-block; padding: 3px 14px; border-radius: 999px; font-size: 20px; font-weight: 800; color: #fff; background: var(--c-primary); }
   .bt-b.k-نظافة { background: var(--c-green); } .bt-b.k-حضور { background: var(--c-orange-d); } .bt-b.k-انضباط { background: var(--c-primary); } .bt-b.k-تميز { background: var(--c-pink); }
   .best::after { content: ''; position: absolute; top: -20%; bottom: -20%; width: 90px; left: -130px; background: rgba(255,255,255,.5); transform: skewX(-20deg); animation: shine 6s 1.5s ease-in-out infinite; }
   .best.pop .bt-c { animation: pop2 .9s cubic-bezier(.16,1,.3,1); }
@@ -392,7 +394,7 @@
         <div class="bt-tx">
           <div class="bt-t">الصف المثالي هذا الأسبوع</div>
           <div class="bt-c" id="bestCls"></div>
-          <span class="bt-b" id="bestWhy"></span>
+          <div class="bt-bs" id="bestWhy"></div>
         </div>
       </div>
     </section>
@@ -1895,15 +1897,23 @@ var WISDOM = [
 ];
 var BEST_KINDS = ['الانضباط', 'النظافة', 'الحضور', 'التميز'];
 var bestKey = '';
+function bestWhys(b) {
+  var w = b && b.why;
+  if (Array.isArray(w)) w = w.slice(); else if (w && typeof w === 'object') w = Object.keys(w).map(function (k) { return w[k]; }); else if (w) w = [w]; else w = [];
+  return w.map(function (x) { return String(x).trim(); }).filter(Boolean).slice(0, 4);
+}
 function renderBest() {
   var b = data.best || {}, box = el('best');
   if (!b.cls) { box.hidden = true; bestKey = ''; return; }
   box.hidden = false;
-  var key = b.cls + '|' + (b.why || '');
+  var whys = bestWhys(b), key = b.cls + '|' + whys.join(',');
   el('bestCls').textContent = b.cls;
-  var w = el('bestWhy'), why = b.why || 'التميز';
-  w.textContent = why;
-  w.className = 'bt-b k-' + why.replace(/^ال/, '').replace('ّ', '');
+  var w = el('bestWhy'); w.innerHTML = ''; var xi = 0;
+  whys.forEach(function (why) {
+    var sp = document.createElement('span'), k = why.replace(/^ال/, '').replace('ّ', '');
+    sp.className = 'bt-b ' + (BEST_KINDS.indexOf(why) >= 0 ? 'k-' + k : 'k-x' + (xi++ % 4));
+    sp.textContent = why; w.appendChild(sp);
+  });
   if (bestKey && bestKey !== key) { box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); if (typeof celebrate === 'function') celebrate(); }
   bestKey = key;
 }
@@ -2391,16 +2401,29 @@ var PANELS = {
     });
   },
   best: function () {
-    var it = current.best || {};
-    var sel = h('select', { class: 'in', id: 'bestWhySel' });
-    BEST_KINDS.forEach(function (k) { var op = h('option', { value: k, text: k }); if ((it.why || 'الانضباط') === k) op.selected = true; sel.appendChild(op); });
-    sel.onchange = function () { save('best/why', sel.value); };
-    return h('div', { class: 'card' }, [
-      h('p', { class: 'hint', style: 'margin:0', text: 'يظهر أسفل لوحة الوقت مع كأس وشارة ملوّنة. عند تغيير الصف تحتفل الشاشة بقصاصات ملوّنة.' }),
+    var it = current.best || {}, chosen = bestWhys(it), extra = chosen.filter(function (x) { return BEST_KINDS.indexOf(x) < 0; });
+    function saveWhys() { save('best/why', chosen.length ? chosen : null); }
+    var wrap = h('div', { class: 'card' }, [
+      h('p', { class: 'hint', style: 'margin:0', text: 'يظهر أسفل لوحة الوقت مع كأس وشارات ملوّنة. تقدر تختار أكثر من سبب، وتضيف أسبابك. عند تغيير الصف تحتفل الشاشة.' }),
       field('الصف', it.cls, function (v) { save('best/cls', v.trim()); }, { ph: 'مثال: العاشر ٢' }),
-      h('div', { class: 'fl' }, [h('label', { for: 'bestWhySel', text: 'سبب الاختيار' }), sel]),
-      h('button', { class: 'btn del', type: 'button', text: 'إخفاء من الشاشة', onclick: function () { ref('best').remove().then(function () { toast('تم الإخفاء'); render(); }); } })
+      h('h3', { text: 'أسباب الاختيار (اختر واحد أو أكثر، حتى ٤)' })
     ]);
+    BEST_KINDS.concat(extra).forEach(function (k) {
+      wrap.appendChild(toggle(k, chosen.indexOf(k) >= 0, function (on) {
+        if (on && chosen.indexOf(k) < 0) { if (chosen.length >= 4) { toast('الحد ٤ أسباب'); render(); return; } chosen.push(k); }
+        if (!on) chosen = chosen.filter(function (x) { return x !== k; });
+        saveWhys();
+      }));
+    });
+    var ni = h('input', { class: 'in', type: 'text', placeholder: 'سبب آخر، مثل: المشاركة', 'aria-label': 'سبب آخر' });
+    wrap.appendChild(h('div', { class: 'row' }, [h('div', { class: 'fl' }, [ni]), h('button', { class: 'btn', type: 'button', text: '+ إضافة', onclick: function () {
+      var v = ni.value.trim(); if (!v) return;
+      if (chosen.indexOf(v) >= 0) { toast('موجود'); return; }
+      if (chosen.length >= 4) { toast('الحد ٤ أسباب'); return; }
+      chosen.push(v); save('best/why', chosen).then(render);
+    } })]));
+    wrap.appendChild(h('button', { class: 'btn del', type: 'button', text: 'إخفاء من الشاشة', onclick: function () { ref('best').remove().then(function () { toast('تم الإخفاء'); render(); }); } }));
+    return wrap;
   },
   honor: function () {
     var it = current.honor || {};
