@@ -1,0 +1,2170 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#4F46E5">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="شاشة الحباب">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>شاشة مدرسة الحباب بن المنذر</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root { --navy: #0F3D3A; --ink2: #4F5F5B; --muted: #7C8A86; --bg: #F3EEE6; --card: #FFFFFF; --line: #E6DFD3; --accent: #E3A92B; --ok: #2E9E6B; --danger: #C2412D; }
+  html, body { margin: 0; }
+  body { font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, sans-serif; }
+  [hidden] { display: none !important; }
+
+  /* ================= شاشة العرض =================
+     نظام التصميم (من مهارة UI/UX Pro Max): نمط Claymorphism بالوضع الفاتح،
+     أساسي نيلي #4F46E5، تمييز برتقالي #EA580C، خلفية #EEF2FF، نص #1E1B4B،
+     خط Baloo (نسخته العربية Baloo Bhaijaan 2)، زوايا مستديرة، حدود سميكة وظل مزدوج. */
+  body.tv { height: 100vh; background: #EEF2FF; overflow: hidden; cursor: none; }
+  #stage {
+    --c-bg: #EEF2FF; --c-fg: #1E1B4B; --c-mfg: #475569; --c-card: #FFFFFF; --c-muted: #E0E7FF; --c-border: #C7D2FE;
+    --c-primary: #4F46E5; --c-primary-d: #3730A3; --c-secondary: #818CF8; --c-orange: #EA580C; --c-orange-d: #C2410C;
+    --c-sky: #0284C7; --c-teal: #0F766E; --c-green: #15803D; --c-pink: #DB2777; --c-yellow: #FACC15; --c-yellow-d: #CA8A04; --c-red: #DC2626;
+    --r: 28px; --bw: 4px;
+    --clay: 0 10px 22px rgba(30,27,75,.14), inset -6px -6px 14px rgba(30,27,75,.08), inset 6px 6px 14px rgba(255,255,255,.7);
+    --clay-c: 0 10px 22px rgba(30,27,75,.18), inset -6px -6px 14px rgba(0,0,0,.14), inset 6px 6px 14px rgba(255,255,255,.28);
+    --f: 'Baloo Bhaijaan 2', 'IBM Plex Sans Arabic', sans-serif;
+    position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
+    background: var(--c-bg); color: var(--c-fg); font-family: var(--f);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .clay { border-radius: var(--r); border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); }
+
+  /* الرأس */
+  #stage header { height: 132px; box-sizing: border-box; padding: 0 56px; display: flex; align-items: center; justify-content: space-between; gap: 40px; flex-shrink: 0; }
+  .brand { display: flex; align-items: center; gap: 22px; min-width: 0; }
+  .logo { width: 84px; height: 84px; border-radius: 26px; background: var(--c-primary); border: var(--bw) solid var(--c-primary-d); box-shadow: var(--clay-c); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; color: #fff; font-size: 46px; font-weight: 800; line-height: 1; }
+  .logo:has(img) { background: #fff; border-color: var(--c-border); }
+  .logo img { width: 100%; height: 100%; object-fit: contain; }
+  .school-name { font-size: 44px; font-weight: 800; white-space: nowrap; line-height: 1.2; }
+  .school-sub { font-size: 23px; color: var(--c-mfg); font-weight: 500; }
+  .dates { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .greg, .hijri { padding: 10px 24px; border-radius: 999px; font-size: 25px; font-weight: 700; line-height: 1.3; }
+  .greg { background: var(--c-card); border: var(--bw) solid var(--c-border); box-shadow: var(--clay); }
+  .hijri { background: var(--c-yellow); border: var(--bw) solid var(--c-yellow-d); color: var(--c-fg); box-shadow: var(--clay-c); }
+
+  /* الشبكة: 1920 = 56 + 440 + 32 + 834 + 32 + 470 + 56 */
+  #stage main { flex: 1; min-height: 0; padding: 4px 56px 30px; box-sizing: border-box; display: grid; grid-template-columns: 440px minmax(0, 1fr) 470px; grid-template-rows: minmax(0, 1fr) 200px; gap: 32px; }
+
+  /* لوحة الوقت (نيلي) */
+  .side { grid-row: 1 / 3; border-radius: 36px; background: var(--c-primary); border: var(--bw) solid var(--c-primary-d); box-shadow: var(--clay-c); color: #fff; padding: 34px 30px 30px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; text-align: center; min-height: 0; overflow: hidden; }
+  .clock { font-size: 140px; font-weight: 800; line-height: 1; display: flex; align-items: baseline; gap: 12px; font-variant-numeric: tabular-nums; margin-top: 18px; }
+  .clock small { font-size: 36px; font-weight: 700; color: var(--c-yellow); }
+  .now-label { margin-top: 30px; align-self: stretch; background: var(--c-card); color: var(--c-orange-d); border-radius: 26px 26px 0 0; padding: 22px 20px 0; font-size: 26px; font-weight: 700; }
+  .now-name { align-self: stretch; background: var(--c-card); color: var(--c-fg); padding: 0 20px; font-size: 60px; font-weight: 800; line-height: 1.2; }
+  .now-left { align-self: stretch; background: var(--c-card); color: var(--c-mfg); padding: 4px 20px 0; font-size: 28px; font-weight: 600; }
+  .now-left b { color: var(--c-orange-d); font-size: 36px; }
+  .meter { align-self: stretch; background: var(--c-card); border-radius: 0 0 26px 26px; padding: 18px 26px 26px; box-sizing: content-box; height: 18px; }
+  .meter i { display: block; height: 18px; width: 0; border-radius: 999px; min-width: 18px; background: var(--c-orange); box-shadow: inset 0 -3px 0 rgba(0,0,0,.15); transition: width 1s linear; }
+  .meter { background: linear-gradient(#E0E7FF, #E0E7FF) content-box, #fff; background-clip: content-box, border-box; }
+  .meter { border-radius: 0 0 26px 26px; }
+  .next-box { margin-top: auto; width: 100%; box-sizing: border-box; border-radius: 26px; background: var(--c-secondary); border: var(--bw) solid #6366F1; box-shadow: var(--clay-c); color: var(--c-fg); padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: right; }
+  .next-box .k { font-size: 22px; font-weight: 600; }
+  .next-box .v { font-size: 36px; font-weight: 800; line-height: 1.15; }
+  .next-box .tm { font-size: 34px; font-weight: 800; color: var(--c-fg); background: var(--c-yellow); border-radius: 18px; padding: 4px 16px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  .qr-box { margin-top: auto; width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 20px; background: var(--c-card); color: var(--c-fg); border-radius: 26px; padding: 16px 18px; text-align: right; }
+  .qr { width: 132px; height: 132px; flex-shrink: 0; background: #fff; border-radius: 14px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .qr-t { display: flex; flex-direction: column; gap: 2px; }
+  .qr-t b { font-size: 30px; font-weight: 800; color: var(--c-primary-d); line-height: 1.2; }
+  .qr-t span { font-size: 21px; font-weight: 600; color: var(--c-mfg); line-height: 1.35; }
+  .qr-box + .next-box { margin-top: 20px; }
+  /* الإعلان (بطاقة بيضاء) */
+  .ann { min-height: 0; display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 36px; padding: 28px; box-sizing: border-box; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); }
+  .ann.noimg { grid-template-columns: minmax(0, 1fr); padding: 40px 48px; }
+  .ann-img { border-radius: 26px; overflow: hidden; background: var(--c-muted); min-height: 0; transition: opacity .6s; }
+  .ann-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ann-text { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 18px; transition: opacity .6s; }
+  .ann-text::before { content: 'إعلان'; align-self: flex-start; padding: 6px 22px; border-radius: 999px; background: var(--c-orange); color: #fff; font-size: 24px; font-weight: 800; box-shadow: var(--clay-c); }
+  .ann h1 { margin: 0; font-size: 62px; line-height: 1.2; font-weight: 800; color: var(--c-fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .ann.noimg h1 { font-size: 84px; }
+  .ann p { margin: 0; font-size: 31px; line-height: 1.6; color: var(--c-mfg); font-weight: 500; white-space: pre-line; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+  .ann.noimg p { font-size: 38px; }
+  .dots { display: flex; gap: 10px; margin-top: 6px; }
+  .dot { width: 16px; height: 16px; border-radius: 999px; background: var(--c-muted); transition: width .3s, background .3s; }
+  .dot.on { width: 48px; background: var(--c-primary); }
+  .fade { opacity: 0; }
+
+  /* الجانب */
+  #stage aside { display: flex; flex-direction: column; gap: 28px; min-height: 0; }
+  .honor { border-radius: 36px; background: var(--c-yellow); border: var(--bw) solid var(--c-yellow-d); box-shadow: var(--clay-c); padding: 22px 26px; display: grid; grid-template-columns: 128px minmax(0, 1fr); grid-template-rows: auto 1fr; column-gap: 22px; row-gap: 8px; flex-shrink: 0; color: var(--c-fg); }
+  .honor-title { grid-column: 2; grid-row: 1; margin: 0; align-self: end; font-size: 25px; font-weight: 800; color: var(--c-primary-d); }
+  .avatar { grid-column: 1; grid-row: 1 / 3; width: 128px; height: 128px; border-radius: 999px; background: #fff; border: 5px solid #fff; box-shadow: var(--clay); overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 60px; font-weight: 800; color: var(--c-primary); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .honor-info { grid-column: 2; grid-row: 2; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .honor-name { font-size: 36px; font-weight: 800; line-height: 1.2; }
+  .honor-sub { font-size: 22px; font-weight: 600; line-height: 1.4; color: #3F3A1C; }
+  .events { flex: 1; min-height: 0; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); padding: 20px 26px 8px; display: flex; flex-direction: column; overflow: hidden; }
+  .events h2 { margin: 0 0 6px; font-size: 28px; font-weight: 800; }
+  .ev { display: flex; align-items: center; gap: 18px; padding: 7px 0; }
+  .days { width: 76px; height: 70px; border-radius: 22px; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--clay-c); background: var(--c-sky); }
+  .ev:nth-child(3n+2) .days { background: var(--c-green); }
+  .ev:nth-child(3n+3) .days { background: var(--c-pink); }
+  .days.soon, .ev .days.soon { background: var(--c-orange); }
+  .days b { font-size: 28px; line-height: 1.1; font-weight: 800; }
+  .days b[style] { font-size: 22px !important; }
+  .days span { font-size: 16px; font-weight: 600; }
+  .ev-t { font-size: 27px; font-weight: 700; line-height: 1.25; }
+  .ev-s { font-size: 20px; color: var(--c-mfg); font-weight: 500; }
+  .empty { font-size: 22px; color: var(--c-mfg); padding-top: 12px; }
+
+  /* جدول اليوم */
+  .sched { grid-column: 2 / 4; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); padding: 16px 24px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .sched-head { display: flex; align-items: center; justify-content: space-between; }
+  .sched-head h2 { margin: 0; font-size: 28px; font-weight: 800; }
+  .status { font-size: 23px; font-weight: 600; color: var(--c-primary-d); background: var(--c-muted); border-radius: 999px; padding: 4px 20px; }
+  .periods { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
+  .per { border-radius: 22px; padding: 6px 2px; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; overflow: hidden; box-shadow: var(--clay-c); transition: transform .4s; }
+  .per:nth-child(6n+1) { background: var(--c-primary); }
+  .per:nth-child(6n+2) { background: var(--c-sky); }
+  .per:nth-child(6n+3) { background: var(--c-teal); }
+  .per:nth-child(6n+4) { background: var(--c-green); }
+  .per:nth-child(6n+5) { background: var(--c-pink); }
+  .per:nth-child(6n+6) { background: var(--c-red); }
+  .per .b { font-size: 16px; font-weight: 600; opacity: .9; }
+  .per .n { font-size: 25px; font-weight: 800; white-space: nowrap; line-height: 1.25; }
+  .per .t { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.25; }
+  .per .t + .t { display: none; }
+  .per.done { background: #E2E8F0 !important; color: #64748B; box-shadow: inset 0 3px 8px rgba(30,27,75,.08); }
+  .per.now { background: var(--c-orange) !important; color: #fff; transform: translateY(-6px); }
+  .per.next { outline: 4px solid var(--c-yellow); outline-offset: -4px; }
+  .per .bar { position: absolute; bottom: 0; right: 0; height: 8px; background: var(--c-yellow); }
+
+  /* شريط الأخبار */
+  #stage footer { height: 80px; background: var(--c-primary); color: #fff; display: flex; align-items: center; gap: 28px; padding-right: 56px; flex-shrink: 0; overflow: hidden; }
+  .news-tag { padding: 6px 24px; border-radius: 999px; background: var(--c-yellow); color: var(--c-fg); font-size: 26px; font-weight: 800; flex-shrink: 0; position: relative; z-index: 2; box-shadow: var(--clay-c); }
+  .ticker { flex: 1; position: relative; height: 100%; overflow: hidden; }
+  .track { position: absolute; top: 0; right: 0; height: 100%; display: flex; align-items: center; white-space: nowrap; font-size: 31px; font-weight: 600; will-change: transform; }
+  .track span.sep { display: inline-block; width: 14px; height: 14px; border-radius: 999px; background: var(--c-yellow); margin: 0 30px; font-size: 0; }
+  @keyframes tick { from { transform: translateX(0); } to { transform: translateX(50%); } }
+
+  /* حركة ناعمة (ارتداد خفيف) */
+  .ann-text:not(.fade) h1, .ann-text:not(.fade) p { animation: pop .7s cubic-bezier(.34,1.56,.64,1) both; }
+  .ann-text:not(.fade) p { animation-delay: .08s; }
+  @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
+
+  #media { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; background: #000; z-index: 10; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity .6s; }
+  #media.show { display: flex; }
+  #media.on { opacity: 1; }
+  #media img, #media video { width: 100%; height: 100%; object-fit: contain; display: block; }
+  #media iframe { width: 100%; height: 100%; border: 0; display: block; }
+  .offline { position: absolute; left: 24px; bottom: 96px; background: var(--c-fg); color: #fff; font-size: 18px; padding: 8px 16px; border-radius: 999px; z-index: 5; }
+  .setup-msg { position: absolute; inset: 0; z-index: 20; background: var(--c-primary); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 40px; line-height: 1.6; text-align: center; padding: 80px; box-sizing: border-box; }
+
+  /* ================= لوحة التحكم ================= */
+  body.admin { background: var(--bg); color: var(--navy); min-height: 100vh; }
+  #admin { max-width: 560px; margin: 0 auto; padding: 16px 16px 120px; box-sizing: border-box; }
+  .a-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0 8px; }
+  .a-top h1 { margin: 0; font-size: 22px; }
+  .a-top .sub { font-size: 13px; color: var(--ink2); display: flex; align-items: center; gap: 6px; }
+  .live { width: 8px; height: 8px; border-radius: 999px; background: var(--ok); display: inline-block; }
+  .live.off { background: var(--danger); }
+  .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 8px 0 14px; scrollbar-width: none; position: sticky; top: 0; background: var(--bg); z-index: 5; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { flex-shrink: 0; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1px solid #C4CCD8; background: #fff; color: var(--navy); font: inherit; font-size: 15px; cursor: pointer; }
+  .tab.on { background: var(--navy); border-color: var(--navy); color: #fff; font-weight: 700; }
+  .card { background: #fff; border-radius: 18px; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .card h3 { margin: 0; font-size: 16px; }
+  .hint { font-size: 13px; color: var(--ink2); margin: 0 0 10px; line-height: 1.6; }
+  .fl { display: flex; flex-direction: column; gap: 4px; }
+  .fl label { font-size: 13px; color: var(--ink2); }
+  .in { min-height: 44px; box-sizing: border-box; border-radius: 12px; border: 1px solid #C4CCD8; background: #F7F9FB; color: var(--navy); font: inherit; font-size: 16px; padding: 8px 12px; width: 100%; }
+  textarea.in { resize: vertical; min-height: 80px; line-height: 1.6; }
+  input[type=color].in { padding: 4px; height: 48px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row > .fl { flex: 1; min-width: 100px; }
+  .btn { min-height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: var(--navy); color: #fff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+  .btn.ghost { background: transparent; color: var(--navy); border: 1px solid #C4CCD8; font-weight: 500; }
+  .btn.gold { background: var(--accent); color: var(--navy); }
+  .btn.del { background: transparent; color: var(--danger); border: 1px solid #E8C4BD; font-weight: 500; }
+  .btn.full { width: 100%; }
+  .sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; cursor: pointer; font-size: 15px; }
+  .sw input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .sw .tr { width: 46px; height: 28px; border-radius: 999px; background: #A3AEBF; position: relative; flex-shrink: 0; transition: background .2s; }
+  .sw .tr::after { content: ''; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 999px; background: #fff; transition: right .2s; }
+  .sw input:checked + .tr { background: var(--ok); }
+  .sw input:checked + .tr::after { right: 21px; }
+  .sw input:focus-visible + .tr { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .imgbox { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .imgbox .pv { width: 96px; height: 64px; border-radius: 10px; background: #DDE3EC; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--muted); }
+  .imgbox .pv img { width: 100%; height: 100%; object-fit: cover; }
+  .item-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .item-head b { font-size: 15px; }
+  .badge { font-size: 12px; padding: 2px 10px; border-radius: 999px; background: var(--bg); color: var(--ink2); }
+  .badge.pin { background: var(--accent); color: var(--navy); font-weight: 700; }
+  .sched-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr) minmax(0, 1.1fr) 40px; gap: 6px; align-items: center; }
+  .sched-row .in { padding: 8px 4px; font-size: 14px; }
+  .sched-row input[type=time] { direction: ltr; text-align: center; }
+  .sched-row input[type=time]::-webkit-calendar-picker-indicator { display: none; }
+  .sched-row .icon-btn { width: 40px; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #E8C4BD; background: transparent; color: var(--danger); font-size: 20px; cursor: pointer; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px; opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 50; }
+  .toast.on { opacity: 1; }
+  .login { max-width: 400px; margin: 10vh auto 0; padding: 0 16px; }
+  .login .logo-big { width: 72px; height: 72px; border-radius: 18px; background: var(--navy); color: var(--accent); font-size: 36px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .err { color: var(--danger); font-size: 14px; min-height: 20px; }
+  .busy { opacity: .6; pointer-events: none; }
+</style>
+</head>
+<body>
+
+<!-- ================= شاشة العرض ================= -->
+<div id="tv" hidden>
+<div id="stage">
+  <header>
+    <div class="brand">
+      <div class="logo" id="logo">ح</div>
+      <div>
+        <div class="school-name" id="schoolName">مدرسة الحباب بن المنذر للتعليم الأساسي</div>
+        <div class="school-sub" id="schoolSub">الصفوف من التاسع إلى الثاني عشر</div>
+      </div>
+    </div>
+    <div class="dates">
+      <div class="greg" id="greg"></div>
+      <div class="hijri" id="hijri"></div>
+    </div>
+  </header>
+  <main>
+    <section class="side">
+      <div class="clock"><span id="time"></span><small id="ampm"></small></div>
+      <div class="now-label" id="nowLabel">الآن</div>
+      <div class="now-name" id="nowName"></div>
+      <div class="now-left" id="nowLeft"></div>
+      <div class="meter"><i id="nowBar"></i></div>
+      <div class="qr-box" id="qrBox">
+        <div class="qr" id="qr" aria-hidden="true"></div>
+        <div class="qr-t"><b>لوحة التحكم</b><span>امسح الرمز بكاميرا الجوال</span></div>
+      </div>
+      <div class="next-box" id="nextBox">
+        <div><div class="k">التالية</div><div class="v" id="nextName"></div></div>
+        <div class="tm" id="nextTime"></div>
+      </div>
+    </section>
+    <section class="ann" id="ann">
+      <div class="ann-img" id="annImg"></div>
+      <div class="ann-text" id="annText">
+        <h1 id="annTitle"></h1>
+        <p id="annBody"></p>
+        <div class="dots" id="dots"></div>
+      </div>
+    </section>
+    <aside>
+      <section class="honor">
+        <h2 class="honor-title">طالب الأسبوع</h2>
+        <div class="avatar" id="avatar"></div>
+        <div class="honor-info">
+          <div class="honor-name" id="honorName"></div>
+          <div class="honor-sub" id="honorSub"></div>
+        </div>
+      </section>
+      <section class="events">
+        <h2>الفعاليات القادمة</h2>
+        <div id="events"></div>
+      </section>
+    </aside>
+    <section class="sched">
+      <div class="sched-head">
+        <h2>جدول اليوم</h2>
+        <div class="status" id="status"></div>
+      </div>
+      <div class="periods" id="periods"></div>
+    </section>
+  </main>
+  <footer>
+    <div class="news-tag">أخبار</div>
+    <div class="ticker"><div class="track" id="track"></div></div>
+  </footer>
+  <div class="offline" id="offline" hidden>بدون اتصال · يعرض آخر محتوى محفوظ</div>
+  <div id="media"></div>
+  <div class="setup-msg" id="setupMsg" hidden>النظام يحتاج إعداد Firebase أولًا.<br>افتح هذا الرابط من الجوال وأضف في آخره ‎#admin</div>
+</div>
+</div>
+
+<!-- ================= لوحة التحكم ================= -->
+<div id="adminWrap" hidden>
+  <div class="login" id="loginView" hidden>
+    <div class="logo-big">ح</div>
+    <h1 style="margin:0 0 4px;font-size:24px">لوحة تحكم الشاشة</h1>
+    <p class="hint">مدرسة الحباب بن المنذر للتعليم الأساسي</p>
+    <form id="loginForm" class="card">
+      <div class="fl"><label for="lgEmail">اسم المستخدم</label><input class="in" id="lgEmail" type="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required dir="ltr"></div>
+      <div class="fl"><label for="lgPass">كلمة السر</label><input class="in" id="lgPass" type="password" autocomplete="current-password" required dir="ltr"></div>
+      <div class="err" id="lgErr" role="alert"></div>
+      <button class="btn full" type="submit">دخول</button>
+    </form>
+  </div>
+  <div id="admin" hidden>
+    <div class="a-top">
+      <div>
+        <h1>إدارة الشاشة</h1>
+        <div class="sub"><span class="live" id="liveDot"></span><span id="liveTxt">متصل · التعديلات تطلع على الشاشة فورًا</span></div>
+      </div>
+      <button class="btn ghost" id="logoutBtn" type="button">خروج</button>
+    </div>
+    <nav class="tabs" id="tabs" aria-label="الأقسام"></nav>
+    <div id="panel"></div>
+  </div>
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script>
+/* QRCode for JavaScript — Copyright (c) 2009 Kazuhiko Arase — MIT license. "QR Code" is a registered trademark of DENSO WAVE INCORPORATED. */
+var QRLib = (function () { var M = {}; function require(n) { return M[n.replace('./', '')]; }
+(function (module) { var exports = module.exports;
+module.exports = {
+    MODE_NUMBER :       1 << 0,
+    MODE_ALPHA_NUM :    1 << 1,
+    MODE_8BIT_BYTE :    1 << 2,
+    MODE_KANJI :        1 << 3
+};
+
+M['QRMode'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+module.exports = {
+	L : 1,
+	M : 0,
+	Q : 3,
+	H : 2
+};
+
+
+M['QRErrorCorrectLevel'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+module.exports = {
+	PATTERN000 : 0,
+	PATTERN001 : 1,
+	PATTERN010 : 2,
+	PATTERN011 : 3,
+	PATTERN100 : 4,
+	PATTERN101 : 5,
+	PATTERN110 : 6,
+	PATTERN111 : 7
+};
+
+M['QRMaskPattern'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+var QRMath = {
+
+	glog : function(n) {
+	
+		if (n < 1) {
+			throw new Error("glog(" + n + ")");
+		}
+		
+		return QRMath.LOG_TABLE[n];
+	},
+	
+	gexp : function(n) {
+	
+		while (n < 0) {
+			n += 255;
+		}
+	
+		while (n >= 256) {
+			n -= 255;
+		}
+	
+		return QRMath.EXP_TABLE[n];
+	},
+	
+	EXP_TABLE : new Array(256),
+	
+	LOG_TABLE : new Array(256)
+
+};
+	
+for (var i = 0; i < 8; i++) {
+	QRMath.EXP_TABLE[i] = 1 << i;
+}
+for (var i = 8; i < 256; i++) {
+	QRMath.EXP_TABLE[i] = QRMath.EXP_TABLE[i - 4]
+		^ QRMath.EXP_TABLE[i - 5]
+		^ QRMath.EXP_TABLE[i - 6]
+		^ QRMath.EXP_TABLE[i - 8];
+}
+for (var i = 0; i < 255; i++) {
+	QRMath.LOG_TABLE[QRMath.EXP_TABLE[i] ] = i;
+}
+
+module.exports = QRMath;
+
+M['QRMath'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+var QRMath = require('./QRMath');
+
+function QRPolynomial(num, shift) {
+	if (num.length === undefined) {
+		throw new Error(num.length + "/" + shift);
+	}
+
+	var offset = 0;
+
+	while (offset < num.length && num[offset] === 0) {
+		offset++;
+	}
+
+	this.num = new Array(num.length - offset + shift);
+	for (var i = 0; i < num.length - offset; i++) {
+		this.num[i] = num[i + offset];
+	}
+}
+
+QRPolynomial.prototype = {
+
+	get : function(index) {
+		return this.num[index];
+	},
+	
+	getLength : function() {
+		return this.num.length;
+	},
+	
+	multiply : function(e) {
+	
+		var num = new Array(this.getLength() + e.getLength() - 1);
+	
+		for (var i = 0; i < this.getLength(); i++) {
+			for (var j = 0; j < e.getLength(); j++) {
+				num[i + j] ^= QRMath.gexp(QRMath.glog(this.get(i) ) + QRMath.glog(e.get(j) ) );
+			}
+		}
+	
+		return new QRPolynomial(num, 0);
+	},
+	
+	mod : function(e) {
+	
+		if (this.getLength() - e.getLength() < 0) {
+			return this;
+		}
+	
+		var ratio = QRMath.glog(this.get(0) ) - QRMath.glog(e.get(0) );
+	
+		var num = new Array(this.getLength() );
+		
+		for (var i = 0; i < this.getLength(); i++) {
+			num[i] = this.get(i);
+		}
+		
+		for (var x = 0; x < e.getLength(); x++) {
+			num[x] ^= QRMath.gexp(QRMath.glog(e.get(x) ) + ratio);
+		}
+	
+		// recursive call
+		return new QRPolynomial(num, 0).mod(e);
+	}
+};
+
+module.exports = QRPolynomial;
+
+M['QRPolynomial'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+var QRMode = require('./QRMode');
+
+function QR8bitByte(data) {
+	this.mode = QRMode.MODE_8BIT_BYTE;
+	this.data = data;
+}
+
+QR8bitByte.prototype = {
+
+	getLength : function() {
+		return this.data.length;
+	},
+	
+	write : function(buffer) {
+		for (var i = 0; i < this.data.length; i++) {
+			// not JIS ...
+			buffer.put(this.data.charCodeAt(i), 8);
+		}
+	}
+};
+
+module.exports = QR8bitByte;
+
+M['QR8bitByte'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+function QRBitBuffer() {
+	this.buffer = [];
+	this.length = 0;
+}
+
+QRBitBuffer.prototype = {
+
+	get : function(index) {
+		var bufIndex = Math.floor(index / 8);
+		return ( (this.buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+	},
+	
+	put : function(num, length) {
+		for (var i = 0; i < length; i++) {
+			this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+		}
+	},
+	
+	getLengthInBits : function() {
+		return this.length;
+	},
+	
+	putBit : function(bit) {
+	
+		var bufIndex = Math.floor(this.length / 8);
+		if (this.buffer.length <= bufIndex) {
+			this.buffer.push(0);
+		}
+	
+		if (bit) {
+			this.buffer[bufIndex] |= (0x80 >>> (this.length % 8) );
+		}
+	
+		this.length++;
+	}
+};
+
+module.exports = QRBitBuffer;
+
+M['QRBitBuffer'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+var QRErrorCorrectLevel = require('./QRErrorCorrectLevel');
+
+function QRRSBlock(totalCount, dataCount) {
+	this.totalCount = totalCount;
+	this.dataCount  = dataCount;
+}
+
+QRRSBlock.RS_BLOCK_TABLE = [
+
+	// L
+	// M
+	// Q
+	// H
+
+	// 1
+	[1, 26, 19],
+	[1, 26, 16],
+	[1, 26, 13],
+	[1, 26, 9],
+	
+	// 2
+	[1, 44, 34],
+	[1, 44, 28],
+	[1, 44, 22],
+	[1, 44, 16],
+
+	// 3
+	[1, 70, 55],
+	[1, 70, 44],
+	[2, 35, 17],
+	[2, 35, 13],
+
+	// 4		
+	[1, 100, 80],
+	[2, 50, 32],
+	[2, 50, 24],
+	[4, 25, 9],
+	
+	// 5
+	[1, 134, 108],
+	[2, 67, 43],
+	[2, 33, 15, 2, 34, 16],
+	[2, 33, 11, 2, 34, 12],
+	
+	// 6
+	[2, 86, 68],
+	[4, 43, 27],
+	[4, 43, 19],
+	[4, 43, 15],
+	
+	// 7		
+	[2, 98, 78],
+	[4, 49, 31],
+	[2, 32, 14, 4, 33, 15],
+	[4, 39, 13, 1, 40, 14],
+	
+	// 8
+	[2, 121, 97],
+	[2, 60, 38, 2, 61, 39],
+	[4, 40, 18, 2, 41, 19],
+	[4, 40, 14, 2, 41, 15],
+	
+	// 9
+	[2, 146, 116],
+	[3, 58, 36, 2, 59, 37],
+	[4, 36, 16, 4, 37, 17],
+	[4, 36, 12, 4, 37, 13],
+	
+	// 10		
+	[2, 86, 68, 2, 87, 69],
+	[4, 69, 43, 1, 70, 44],
+	[6, 43, 19, 2, 44, 20],
+	[6, 43, 15, 2, 44, 16],
+
+	// 11
+	[4, 101, 81],
+	[1, 80, 50, 4, 81, 51],
+	[4, 50, 22, 4, 51, 23],
+	[3, 36, 12, 8, 37, 13],
+
+	// 12
+	[2, 116, 92, 2, 117, 93],
+	[6, 58, 36, 2, 59, 37],
+	[4, 46, 20, 6, 47, 21],
+	[7, 42, 14, 4, 43, 15],
+
+	// 13
+	[4, 133, 107],
+	[8, 59, 37, 1, 60, 38],
+	[8, 44, 20, 4, 45, 21],
+	[12, 33, 11, 4, 34, 12],
+
+	// 14
+	[3, 145, 115, 1, 146, 116],
+	[4, 64, 40, 5, 65, 41],
+	[11, 36, 16, 5, 37, 17],
+	[11, 36, 12, 5, 37, 13],
+
+	// 15
+	[5, 109, 87, 1, 110, 88],
+	[5, 65, 41, 5, 66, 42],
+	[5, 54, 24, 7, 55, 25],
+	[11, 36, 12],
+
+	// 16
+	[5, 122, 98, 1, 123, 99],
+	[7, 73, 45, 3, 74, 46],
+	[15, 43, 19, 2, 44, 20],
+	[3, 45, 15, 13, 46, 16],
+
+	// 17
+	[1, 135, 107, 5, 136, 108],
+	[10, 74, 46, 1, 75, 47],
+	[1, 50, 22, 15, 51, 23],
+	[2, 42, 14, 17, 43, 15],
+
+	// 18
+	[5, 150, 120, 1, 151, 121],
+	[9, 69, 43, 4, 70, 44],
+	[17, 50, 22, 1, 51, 23],
+	[2, 42, 14, 19, 43, 15],
+
+	// 19
+	[3, 141, 113, 4, 142, 114],
+	[3, 70, 44, 11, 71, 45],
+	[17, 47, 21, 4, 48, 22],
+	[9, 39, 13, 16, 40, 14],
+
+	// 20
+	[3, 135, 107, 5, 136, 108],
+	[3, 67, 41, 13, 68, 42],
+	[15, 54, 24, 5, 55, 25],
+	[15, 43, 15, 10, 44, 16],
+
+	// 21
+	[4, 144, 116, 4, 145, 117],
+	[17, 68, 42],
+	[17, 50, 22, 6, 51, 23],
+	[19, 46, 16, 6, 47, 17],
+
+	// 22
+	[2, 139, 111, 7, 140, 112],
+	[17, 74, 46],
+	[7, 54, 24, 16, 55, 25],
+	[34, 37, 13],
+
+	// 23
+	[4, 151, 121, 5, 152, 122],
+	[4, 75, 47, 14, 76, 48],
+	[11, 54, 24, 14, 55, 25],
+	[16, 45, 15, 14, 46, 16],
+
+	// 24
+	[6, 147, 117, 4, 148, 118],
+	[6, 73, 45, 14, 74, 46],
+	[11, 54, 24, 16, 55, 25],
+	[30, 46, 16, 2, 47, 17],
+
+	// 25
+	[8, 132, 106, 4, 133, 107],
+	[8, 75, 47, 13, 76, 48],
+	[7, 54, 24, 22, 55, 25],
+	[22, 45, 15, 13, 46, 16],
+
+	// 26
+	[10, 142, 114, 2, 143, 115],
+	[19, 74, 46, 4, 75, 47],
+	[28, 50, 22, 6, 51, 23],
+	[33, 46, 16, 4, 47, 17],
+
+	// 27
+	[8, 152, 122, 4, 153, 123],
+	[22, 73, 45, 3, 74, 46],
+	[8, 53, 23, 26, 54, 24],
+	[12, 45, 15, 28, 46, 16],
+
+	// 28
+	[3, 147, 117, 10, 148, 118],
+	[3, 73, 45, 23, 74, 46],
+	[4, 54, 24, 31, 55, 25],
+	[11, 45, 15, 31, 46, 16],
+
+	// 29
+	[7, 146, 116, 7, 147, 117],
+	[21, 73, 45, 7, 74, 46],
+	[1, 53, 23, 37, 54, 24],
+	[19, 45, 15, 26, 46, 16],
+
+	// 30
+	[5, 145, 115, 10, 146, 116],
+	[19, 75, 47, 10, 76, 48],
+	[15, 54, 24, 25, 55, 25],
+	[23, 45, 15, 25, 46, 16],
+
+	// 31
+	[13, 145, 115, 3, 146, 116],
+	[2, 74, 46, 29, 75, 47],
+	[42, 54, 24, 1, 55, 25],
+	[23, 45, 15, 28, 46, 16],
+
+	// 32
+	[17, 145, 115],
+	[10, 74, 46, 23, 75, 47],
+	[10, 54, 24, 35, 55, 25],
+	[19, 45, 15, 35, 46, 16],
+
+	// 33
+	[17, 145, 115, 1, 146, 116],
+	[14, 74, 46, 21, 75, 47],
+	[29, 54, 24, 19, 55, 25],
+	[11, 45, 15, 46, 46, 16],
+
+	// 34
+	[13, 145, 115, 6, 146, 116],
+	[14, 74, 46, 23, 75, 47],
+	[44, 54, 24, 7, 55, 25],
+	[59, 46, 16, 1, 47, 17],
+
+	// 35
+	[12, 151, 121, 7, 152, 122],
+	[12, 75, 47, 26, 76, 48],
+	[39, 54, 24, 14, 55, 25],
+	[22, 45, 15, 41, 46, 16],
+
+	// 36
+	[6, 151, 121, 14, 152, 122],
+	[6, 75, 47, 34, 76, 48],
+	[46, 54, 24, 10, 55, 25],
+	[2, 45, 15, 64, 46, 16],
+
+	// 37
+	[17, 152, 122, 4, 153, 123],
+	[29, 74, 46, 14, 75, 47],
+	[49, 54, 24, 10, 55, 25],
+	[24, 45, 15, 46, 46, 16],
+
+	// 38
+	[4, 152, 122, 18, 153, 123],
+	[13, 74, 46, 32, 75, 47],
+	[48, 54, 24, 14, 55, 25],
+	[42, 45, 15, 32, 46, 16],
+
+	// 39
+	[20, 147, 117, 4, 148, 118],
+	[40, 75, 47, 7, 76, 48],
+	[43, 54, 24, 22, 55, 25],
+	[10, 45, 15, 67, 46, 16],
+
+	// 40
+	[19, 148, 118, 6, 149, 119],
+	[18, 75, 47, 31, 76, 48],
+	[34, 54, 24, 34, 55, 25],
+	[20, 45, 15, 61, 46, 16]
+];
+
+QRRSBlock.getRSBlocks = function(typeNumber, errorCorrectLevel) {
+	
+	var rsBlock = QRRSBlock.getRsBlockTable(typeNumber, errorCorrectLevel);
+	
+	if (rsBlock === undefined) {
+		throw new Error("bad rs block @ typeNumber:" + typeNumber + "/errorCorrectLevel:" + errorCorrectLevel);
+	}
+
+	var length = rsBlock.length / 3;
+	
+	var list = [];
+	
+	for (var i = 0; i < length; i++) {
+
+		var count = rsBlock[i * 3 + 0];
+		var totalCount = rsBlock[i * 3 + 1];
+		var dataCount  = rsBlock[i * 3 + 2];
+
+		for (var j = 0; j < count; j++) {
+			list.push(new QRRSBlock(totalCount, dataCount) );	
+		}
+	}
+	
+	return list;
+};
+
+QRRSBlock.getRsBlockTable = function(typeNumber, errorCorrectLevel) {
+
+	switch(errorCorrectLevel) {
+	case QRErrorCorrectLevel.L :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+	case QRErrorCorrectLevel.M :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+	case QRErrorCorrectLevel.Q :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+	case QRErrorCorrectLevel.H :
+		return QRRSBlock.RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+	default :
+		return undefined;
+	}
+};
+
+module.exports = QRRSBlock;
+
+M['QRRSBlock'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+var QRMode = require('./QRMode');
+var QRPolynomial = require('./QRPolynomial');
+var QRMath = require('./QRMath');
+var QRMaskPattern = require('./QRMaskPattern');
+
+var QRUtil = {
+
+    PATTERN_POSITION_TABLE : [
+        [],
+        [6, 18],
+        [6, 22],
+        [6, 26],
+        [6, 30],
+        [6, 34],
+        [6, 22, 38],
+        [6, 24, 42],
+        [6, 26, 46],
+        [6, 28, 50],
+        [6, 30, 54],        
+        [6, 32, 58],
+        [6, 34, 62],
+        [6, 26, 46, 66],
+        [6, 26, 48, 70],
+        [6, 26, 50, 74],
+        [6, 30, 54, 78],
+        [6, 30, 56, 82],
+        [6, 30, 58, 86],
+        [6, 34, 62, 90],
+        [6, 28, 50, 72, 94],
+        [6, 26, 50, 74, 98],
+        [6, 30, 54, 78, 102],
+        [6, 28, 54, 80, 106],
+        [6, 32, 58, 84, 110],
+        [6, 30, 58, 86, 114],
+        [6, 34, 62, 90, 118],
+        [6, 26, 50, 74, 98, 122],
+        [6, 30, 54, 78, 102, 126],
+        [6, 26, 52, 78, 104, 130],
+        [6, 30, 56, 82, 108, 134],
+        [6, 34, 60, 86, 112, 138],
+        [6, 30, 58, 86, 114, 142],
+        [6, 34, 62, 90, 118, 146],
+        [6, 30, 54, 78, 102, 126, 150],
+        [6, 24, 50, 76, 102, 128, 154],
+        [6, 28, 54, 80, 106, 132, 158],
+        [6, 32, 58, 84, 110, 136, 162],
+        [6, 26, 54, 82, 110, 138, 166],
+        [6, 30, 58, 86, 114, 142, 170]
+    ],
+
+    G15 : (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0),
+    G18 : (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0),
+    G15_MASK : (1 << 14) | (1 << 12) | (1 << 10)    | (1 << 4) | (1 << 1),
+
+    getBCHTypeInfo : function(data) {
+        var d = data << 10;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) >= 0) {
+            d ^= (QRUtil.G15 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G15) ) );    
+        }
+        return ( (data << 10) | d) ^ QRUtil.G15_MASK;
+    },
+
+    getBCHTypeNumber : function(data) {
+        var d = data << 12;
+        while (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) >= 0) {
+            d ^= (QRUtil.G18 << (QRUtil.getBCHDigit(d) - QRUtil.getBCHDigit(QRUtil.G18) ) );    
+        }
+        return (data << 12) | d;
+    },
+
+    getBCHDigit : function(data) {
+
+        var digit = 0;
+
+        while (data !== 0) {
+            digit++;
+            data >>>= 1;
+        }
+
+        return digit;
+    },
+
+    getPatternPosition : function(typeNumber) {
+        return QRUtil.PATTERN_POSITION_TABLE[typeNumber - 1];
+    },
+
+    getMask : function(maskPattern, i, j) {
+        
+        switch (maskPattern) {
+            
+        case QRMaskPattern.PATTERN000 : return (i + j) % 2 === 0;
+        case QRMaskPattern.PATTERN001 : return i % 2 === 0;
+        case QRMaskPattern.PATTERN010 : return j % 3 === 0;
+        case QRMaskPattern.PATTERN011 : return (i + j) % 3 === 0;
+        case QRMaskPattern.PATTERN100 : return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 === 0;
+        case QRMaskPattern.PATTERN101 : return (i * j) % 2 + (i * j) % 3 === 0;
+        case QRMaskPattern.PATTERN110 : return ( (i * j) % 2 + (i * j) % 3) % 2 === 0;
+        case QRMaskPattern.PATTERN111 : return ( (i * j) % 3 + (i + j) % 2) % 2 === 0;
+
+        default :
+            throw new Error("bad maskPattern:" + maskPattern);
+        }
+    },
+
+    getErrorCorrectPolynomial : function(errorCorrectLength) {
+
+        var a = new QRPolynomial([1], 0);
+
+        for (var i = 0; i < errorCorrectLength; i++) {
+            a = a.multiply(new QRPolynomial([1, QRMath.gexp(i)], 0) );
+        }
+
+        return a;
+    },
+
+    getLengthInBits : function(mode, type) {
+
+        if (1 <= type && type < 10) {
+
+            // 1 - 9
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 10;
+            case QRMode.MODE_ALPHA_NUM  : return 9;
+            case QRMode.MODE_8BIT_BYTE  : return 8;
+            case QRMode.MODE_KANJI      : return 8;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 27) {
+
+            // 10 - 26
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 12;
+            case QRMode.MODE_ALPHA_NUM  : return 11;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 10;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else if (type < 41) {
+
+            // 27 - 40
+
+            switch(mode) {
+            case QRMode.MODE_NUMBER     : return 14;
+            case QRMode.MODE_ALPHA_NUM  : return 13;
+            case QRMode.MODE_8BIT_BYTE  : return 16;
+            case QRMode.MODE_KANJI      : return 12;
+            default :
+                throw new Error("mode:" + mode);
+            }
+
+        } else {
+            throw new Error("type:" + type);
+        }
+    },
+
+    getLostPoint : function(qrCode) {
+        
+        var moduleCount = qrCode.getModuleCount();
+        var lostPoint = 0;
+        var row = 0; 
+        var col = 0;
+
+        
+        // LEVEL1
+        
+        for (row = 0; row < moduleCount; row++) {
+
+            for (col = 0; col < moduleCount; col++) {
+
+                var sameCount = 0;
+                var dark = qrCode.isDark(row, col);
+
+                for (var r = -1; r <= 1; r++) {
+
+                    if (row + r < 0 || moduleCount <= row + r) {
+                        continue;
+                    }
+
+                    for (var c = -1; c <= 1; c++) {
+
+                        if (col + c < 0 || moduleCount <= col + c) {
+                            continue;
+                        }
+
+                        if (r === 0 && c === 0) {
+                            continue;
+                        }
+
+                        if (dark === qrCode.isDark(row + r, col + c) ) {
+                            sameCount++;
+                        }
+                    }
+                }
+
+                if (sameCount > 5) {
+                    lostPoint += (3 + sameCount - 5);
+                }
+            }
+        }
+
+        // LEVEL2
+
+        for (row = 0; row < moduleCount - 1; row++) {
+            for (col = 0; col < moduleCount - 1; col++) {
+                var count = 0;
+                if (qrCode.isDark(row,     col    ) ) count++;
+                if (qrCode.isDark(row + 1, col    ) ) count++;
+                if (qrCode.isDark(row,     col + 1) ) count++;
+                if (qrCode.isDark(row + 1, col + 1) ) count++;
+                if (count === 0 || count === 4) {
+                    lostPoint += 3;
+                }
+            }
+        }
+
+        // LEVEL3
+
+        for (row = 0; row < moduleCount; row++) {
+            for (col = 0; col < moduleCount - 6; col++) {
+                if (qrCode.isDark(row, col) && 
+                        !qrCode.isDark(row, col + 1) && 
+                         qrCode.isDark(row, col + 2) && 
+                         qrCode.isDark(row, col + 3) && 
+                         qrCode.isDark(row, col + 4) && 
+                        !qrCode.isDark(row, col + 5) && 
+                         qrCode.isDark(row, col + 6) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount - 6; row++) {
+                if (qrCode.isDark(row, col) &&
+                        !qrCode.isDark(row + 1, col) &&
+                         qrCode.isDark(row + 2, col) &&
+                         qrCode.isDark(row + 3, col) &&
+                         qrCode.isDark(row + 4, col) &&
+                        !qrCode.isDark(row + 5, col) &&
+                         qrCode.isDark(row + 6, col) ) {
+                    lostPoint += 40;
+                }
+            }
+        }
+
+        // LEVEL4
+        
+        var darkCount = 0;
+
+        for (col = 0; col < moduleCount; col++) {
+            for (row = 0; row < moduleCount; row++) {
+                if (qrCode.isDark(row, col) ) {
+                    darkCount++;
+                }
+            }
+        }
+        
+        var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+        lostPoint += ratio * 10;
+
+        return lostPoint;       
+    }
+
+};
+
+module.exports = QRUtil;
+
+M['QRUtil'] = module.exports; })({ exports: {} });
+(function (module) { var exports = module.exports;
+//---------------------------------------------------------------------
+// QRCode for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//   http://www.opensource.org/licenses/mit-license.php
+//
+// The word "QR Code" is registered trademark of 
+// DENSO WAVE INCORPORATED
+//   http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+// Modified to work in node for this project (and some refactoring)
+//---------------------------------------------------------------------
+
+var QR8bitByte = require('./QR8bitByte');
+var QRUtil = require('./QRUtil');
+var QRPolynomial = require('./QRPolynomial');
+var QRRSBlock = require('./QRRSBlock');
+var QRBitBuffer = require('./QRBitBuffer');
+
+function QRCode(typeNumber, errorCorrectLevel) {
+	this.typeNumber = typeNumber;
+	this.errorCorrectLevel = errorCorrectLevel;
+	this.modules = null;
+	this.moduleCount = 0;
+	this.dataCache = null;
+	this.dataList = [];
+}
+
+QRCode.prototype = {
+	
+	addData : function(data) {
+		var newData = new QR8bitByte(data);
+		this.dataList.push(newData);
+		this.dataCache = null;
+	},
+	
+	isDark : function(row, col) {
+		if (row < 0 || this.moduleCount <= row || col < 0 || this.moduleCount <= col) {
+			throw new Error(row + "," + col);
+		}
+		return this.modules[row][col];
+	},
+
+	getModuleCount : function() {
+		return this.moduleCount;
+	},
+	
+	make : function() {
+		// Calculate automatically typeNumber if provided is < 1
+		if (this.typeNumber < 1 ){
+			var typeNumber = 1;
+			for (typeNumber = 1; typeNumber < 40; typeNumber++) {
+				var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, this.errorCorrectLevel);
+
+				var buffer = new QRBitBuffer();
+				var totalDataCount = 0;
+				for (var i = 0; i < rsBlocks.length; i++) {
+					totalDataCount += rsBlocks[i].dataCount;
+				}
+
+				for (var x = 0; x < this.dataList.length; x++) {
+					var data = this.dataList[x];
+					buffer.put(data.mode, 4);
+					buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+					data.write(buffer);
+				}
+				if (buffer.getLengthInBits() <= totalDataCount * 8)
+					break;
+			}
+			this.typeNumber = typeNumber;
+		}
+		this.makeImpl(false, this.getBestMaskPattern() );
+	},
+	
+	makeImpl : function(test, maskPattern) {
+		
+		this.moduleCount = this.typeNumber * 4 + 17;
+		this.modules = new Array(this.moduleCount);
+		
+		for (var row = 0; row < this.moduleCount; row++) {
+			
+			this.modules[row] = new Array(this.moduleCount);
+			
+			for (var col = 0; col < this.moduleCount; col++) {
+				this.modules[row][col] = null;//(col + row) % 3;
+			}
+		}
+	
+		this.setupPositionProbePattern(0, 0);
+		this.setupPositionProbePattern(this.moduleCount - 7, 0);
+		this.setupPositionProbePattern(0, this.moduleCount - 7);
+		this.setupPositionAdjustPattern();
+		this.setupTimingPattern();
+		this.setupTypeInfo(test, maskPattern);
+		
+		if (this.typeNumber >= 7) {
+			this.setupTypeNumber(test);
+		}
+	
+		if (this.dataCache === null) {
+			this.dataCache = QRCode.createData(this.typeNumber, this.errorCorrectLevel, this.dataList);
+		}
+	
+		this.mapData(this.dataCache, maskPattern);
+	},
+
+	setupPositionProbePattern : function(row, col)  {
+		
+		for (var r = -1; r <= 7; r++) {
+			
+			if (row + r <= -1 || this.moduleCount <= row + r) continue;
+			
+			for (var c = -1; c <= 7; c++) {
+				
+				if (col + c <= -1 || this.moduleCount <= col + c) continue;
+				
+				if ( (0 <= r && r <= 6 && (c === 0 || c === 6) ) || 
+                     (0 <= c && c <= 6 && (r === 0 || r === 6) ) || 
+                     (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+					this.modules[row + r][col + c] = true;
+				} else {
+					this.modules[row + r][col + c] = false;
+				}
+			}		
+		}		
+	},
+	
+	getBestMaskPattern : function() {
+	
+		var minLostPoint = 0;
+		var pattern = 0;
+	
+		for (var i = 0; i < 8; i++) {
+			
+			this.makeImpl(true, i);
+	
+			var lostPoint = QRUtil.getLostPoint(this);
+	
+			if (i === 0 || minLostPoint >  lostPoint) {
+				minLostPoint = lostPoint;
+				pattern = i;
+			}
+		}
+	
+		return pattern;
+	},
+	
+	createMovieClip : function(target_mc, instance_name, depth) {
+	
+		var qr_mc = target_mc.createEmptyMovieClip(instance_name, depth);
+		var cs = 1;
+	
+		this.make();
+
+		for (var row = 0; row < this.modules.length; row++) {
+			
+			var y = row * cs;
+			
+			for (var col = 0; col < this.modules[row].length; col++) {
+	
+				var x = col * cs;
+				var dark = this.modules[row][col];
+			
+				if (dark) {
+					qr_mc.beginFill(0, 100);
+					qr_mc.moveTo(x, y);
+					qr_mc.lineTo(x + cs, y);
+					qr_mc.lineTo(x + cs, y + cs);
+					qr_mc.lineTo(x, y + cs);
+					qr_mc.endFill();
+				}
+			}
+		}
+		
+		return qr_mc;
+	},
+
+	setupTimingPattern : function() {
+		
+		for (var r = 8; r < this.moduleCount - 8; r++) {
+			if (this.modules[r][6] !== null) {
+				continue;
+			}
+			this.modules[r][6] = (r % 2 === 0);
+		}
+	
+		for (var c = 8; c < this.moduleCount - 8; c++) {
+			if (this.modules[6][c] !== null) {
+				continue;
+			}
+			this.modules[6][c] = (c % 2 === 0);
+		}
+	},
+	
+	setupPositionAdjustPattern : function() {
+	
+		var pos = QRUtil.getPatternPosition(this.typeNumber);
+		
+		for (var i = 0; i < pos.length; i++) {
+		
+			for (var j = 0; j < pos.length; j++) {
+			
+				var row = pos[i];
+				var col = pos[j];
+				
+				if (this.modules[row][col] !== null) {
+					continue;
+				}
+				
+				for (var r = -2; r <= 2; r++) {
+				
+					for (var c = -2; c <= 2; c++) {
+					
+						if (Math.abs(r) === 2 || 
+                            Math.abs(c) === 2 ||
+                            (r === 0 && c === 0) ) {
+							this.modules[row + r][col + c] = true;
+						} else {
+							this.modules[row + r][col + c] = false;
+						}
+					}
+				}
+			}
+		}
+	},
+	
+	setupTypeNumber : function(test) {
+	
+		var bits = QRUtil.getBCHTypeNumber(this.typeNumber);
+        var mod;
+	
+		for (var i = 0; i < 18; i++) {
+			mod = (!test && ( (bits >> i) & 1) === 1);
+			this.modules[Math.floor(i / 3)][i % 3 + this.moduleCount - 8 - 3] = mod;
+		}
+	
+		for (var x = 0; x < 18; x++) {
+			mod = (!test && ( (bits >> x) & 1) === 1);
+			this.modules[x % 3 + this.moduleCount - 8 - 3][Math.floor(x / 3)] = mod;
+		}
+	},
+	
+	setupTypeInfo : function(test, maskPattern) {
+	
+		var data = (this.errorCorrectLevel << 3) | maskPattern;
+		var bits = QRUtil.getBCHTypeInfo(data);
+        var mod;
+	
+		// vertical		
+		for (var v = 0; v < 15; v++) {
+	
+			mod = (!test && ( (bits >> v) & 1) === 1);
+	
+			if (v < 6) {
+				this.modules[v][8] = mod;
+			} else if (v < 8) {
+				this.modules[v + 1][8] = mod;
+			} else {
+				this.modules[this.moduleCount - 15 + v][8] = mod;
+			}
+		}
+	
+		// horizontal
+		for (var h = 0; h < 15; h++) {
+	
+			mod = (!test && ( (bits >> h) & 1) === 1);
+			
+			if (h < 8) {
+				this.modules[8][this.moduleCount - h - 1] = mod;
+			} else if (h < 9) {
+				this.modules[8][15 - h - 1 + 1] = mod;
+			} else {
+				this.modules[8][15 - h - 1] = mod;
+			}
+		}
+	
+		// fixed module
+		this.modules[this.moduleCount - 8][8] = (!test);
+	
+	},
+	
+	mapData : function(data, maskPattern) {
+		
+		var inc = -1;
+		var row = this.moduleCount - 1;
+		var bitIndex = 7;
+		var byteIndex = 0;
+		
+		for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+	
+			if (col === 6) col--;
+	
+			while (true) {
+	
+				for (var c = 0; c < 2; c++) {
+					
+					if (this.modules[row][col - c] === null) {
+						
+						var dark = false;
+	
+						if (byteIndex < data.length) {
+							dark = ( ( (data[byteIndex] >>> bitIndex) & 1) === 1);
+						}
+	
+						var mask = QRUtil.getMask(maskPattern, row, col - c);
+	
+						if (mask) {
+							dark = !dark;
+						}
+						
+						this.modules[row][col - c] = dark;
+						bitIndex--;
+	
+						if (bitIndex === -1) {
+							byteIndex++;
+							bitIndex = 7;
+						}
+					}
+				}
+								
+				row += inc;
+	
+				if (row < 0 || this.moduleCount <= row) {
+					row -= inc;
+					inc = -inc;
+					break;
+				}
+			}
+		}
+		
+	}
+
+};
+
+QRCode.PAD0 = 0xEC;
+QRCode.PAD1 = 0x11;
+
+QRCode.createData = function(typeNumber, errorCorrectLevel, dataList) {
+	
+	var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectLevel);
+	
+	var buffer = new QRBitBuffer();
+	
+	for (var i = 0; i < dataList.length; i++) {
+		var data = dataList[i];
+		buffer.put(data.mode, 4);
+		buffer.put(data.getLength(), QRUtil.getLengthInBits(data.mode, typeNumber) );
+		data.write(buffer);
+	}
+
+	// calc num max data.
+	var totalDataCount = 0;
+	for (var x = 0; x < rsBlocks.length; x++) {
+		totalDataCount += rsBlocks[x].dataCount;
+	}
+
+	if (buffer.getLengthInBits() > totalDataCount * 8) {
+		throw new Error("code length overflow. (" + 
+            buffer.getLengthInBits() + 
+            ">" +  
+            totalDataCount * 8 + 
+            ")");
+	}
+
+	// end code
+	if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+		buffer.put(0, 4);
+	}
+
+	// padding
+	while (buffer.getLengthInBits() % 8 !== 0) {
+		buffer.putBit(false);
+	}
+
+	// padding
+	while (true) {
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD0, 8);
+		
+		if (buffer.getLengthInBits() >= totalDataCount * 8) {
+			break;
+		}
+		buffer.put(QRCode.PAD1, 8);
+	}
+
+	return QRCode.createBytes(buffer, rsBlocks);
+};
+
+QRCode.createBytes = function(buffer, rsBlocks) {
+
+	var offset = 0;
+	
+	var maxDcCount = 0;
+	var maxEcCount = 0;
+	
+	var dcdata = new Array(rsBlocks.length);
+	var ecdata = new Array(rsBlocks.length);
+	
+	for (var r = 0; r < rsBlocks.length; r++) {
+
+		var dcCount = rsBlocks[r].dataCount;
+		var ecCount = rsBlocks[r].totalCount - dcCount;
+
+		maxDcCount = Math.max(maxDcCount, dcCount);
+		maxEcCount = Math.max(maxEcCount, ecCount);
+		
+		dcdata[r] = new Array(dcCount);
+		
+		for (var i = 0; i < dcdata[r].length; i++) {
+			dcdata[r][i] = 0xff & buffer.buffer[i + offset];
+		}
+		offset += dcCount;
+		
+		var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+		var rawPoly = new QRPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+		var modPoly = rawPoly.mod(rsPoly);
+		ecdata[r] = new Array(rsPoly.getLength() - 1);
+		for (var x = 0; x < ecdata[r].length; x++) {
+            var modIndex = x + modPoly.getLength() - ecdata[r].length;
+			ecdata[r][x] = (modIndex >= 0)? modPoly.get(modIndex) : 0;
+		}
+
+	}
+	
+	var totalCodeCount = 0;
+	for (var y = 0; y < rsBlocks.length; y++) {
+		totalCodeCount += rsBlocks[y].totalCount;
+	}
+
+	var data = new Array(totalCodeCount);
+	var index = 0;
+
+	for (var z = 0; z < maxDcCount; z++) {
+		for (var s = 0; s < rsBlocks.length; s++) {
+			if (z < dcdata[s].length) {
+				data[index++] = dcdata[s][z];
+			}
+		}
+	}
+
+	for (var xx = 0; xx < maxEcCount; xx++) {
+		for (var t = 0; t < rsBlocks.length; t++) {
+			if (xx < ecdata[t].length) {
+				data[index++] = ecdata[t][xx];
+			}
+		}
+	}
+
+	return data;
+
+};
+
+module.exports = QRCode;
+
+M['index'] = module.exports; })({ exports: {} });
+return { QRCode: M['index'], ECL: M['QRErrorCorrectLevel'] }; })();
+</script>
+<script>
+/* =====================================================
+   إعدادات Firebase — تنحط هنا بعد إنشاء المشروع
+   ===================================================== */
+var FIREBASE_CONFIG = null;
+/* مثال:
+var FIREBASE_CONFIG = {
+  apiKey: "...",
+  authDomain: "....firebaseapp.com",
+  databaseURL: "https://....firebasedatabase.app",
+  projectId: "...",
+  appId: "..."
+};
+*/
+var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
+var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
+var WEEKEND = [5, 6];       // الجمعة والسبت
+
+/* ========= أدوات عامة ========= */
+var AR = '٠١٢٣٤٥٦٧٨٩';
+function ar(s) { return String(s).replace(/[0-9]/g, function (d) { return AR[+d]; }); }
+function el(id) { return document.getElementById(id); }
+function nowLocal() { return new Date(Date.now() + UTC_OFFSET_HOURS * 3600000); }
+function toMin(t) { var m = String(t || '').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; }
+function fmt12(min) { var h = Math.floor(min / 60), m = min % 60; h = h % 12 || 12; return ar(h + ':' + (m < 10 ? '0' : '') + m); }
+function parseDate(s) { var m = String(s || '').match(/(\d{4})-(\d{1,2})-(\d{1,2})/); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : null; }
+function vals(o) { return Object.keys(o || {}).sort().map(function (k) { var v = o[k]; v._id = k; return v; }); }
+
+var DEFAULT = {
+  settings: { name: 'مدرسة الحباب بن المنذر للتعليم الأساسي', sub: 'الصفوف من التاسع إلى الثاني عشر', logo: '', accent: '#E3A92B', annSeconds: 12, mainSeconds: 60, sound: false, qr: true },
+  ann: { a1: { t: 'أهلًا بكم', b: 'مرحبًا بكم في مدرسة الحباب بن المنذر', img: '', show: true } },
+  news: { n1: { t: 'مدرسة الحباب بن المنذر للتعليم الأساسي', show: true } },
+  events: {},
+  honor: { name: '', cls: '', why: '', img: '' },
+  sched: [
+    ['الطابور', '07:10', '07:25'], ['الأولى', '07:25', '08:05'], ['الثانية', '08:10', '08:50'],
+    ['الثالثة', '08:55', '09:35'], ['الرابعة', '09:40', '10:20'], ['الاستراحة', '10:20', '10:45'],
+    ['الخامسة', '10:45', '11:25'], ['السادسة', '11:30', '12:10'], ['السابعة', '12:15', '12:55'],
+    ['الثامنة', '13:00', '13:40']
+  ],
+  media: {}
+};
+
+var isAdmin = /admin/i.test(location.hash) || /[?&]admin\b/i.test(location.search);
+window.addEventListener('hashchange', function () { location.reload(); });
+var db = null, auth = null;
+if (FIREBASE_CONFIG && window.firebase) {
+  try { firebase.initializeApp(FIREBASE_CONFIG); db = firebase.database(); auth = firebase.auth(); } catch (e) { console.error(e); }
+}
+
+/* =====================================================
+   شاشة العرض
+   ===================================================== */
+var raw = DEFAULT, data;
+function normalize(v) {
+  v = v || {};
+  var st = {}; var ds = DEFAULT.settings; var vs = v.settings || {};
+  Object.keys(ds).forEach(function (k) { st[k] = vs[k] !== undefined && vs[k] !== '' ? vs[k] : ds[k]; });
+  var ann = vals(v.ann).filter(function (a) { return a.show !== false && a.t; });
+  if (!ann.length) ann = vals(DEFAULT.ann);
+  var sched = (v.sched || []).filter(function (p) { return p && p[0] && toMin(p[1]) !== null && toMin(p[2]) !== null; });
+  if (!sched.length) sched = DEFAULT.sched;
+  return {
+    settings: st, ann: ann,
+    news: vals(v.news).filter(function (n) { return n.show !== false && n.t; }).map(function (n) { return n.t; }),
+    events: vals(v.events).filter(function (e) { return e.t; }),
+    honor: v.honor || DEFAULT.honor,
+    sched: sched,
+    media: vals(v.media).filter(function (m) { return m.url || m.img; })
+  };
+}
+
+function fit() {
+  var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  var st = el('stage');
+  st.style.transform = 'scale(' + s + ')';
+  st.style.left = ((window.innerWidth - 1920 * s) / 2) + 'px';
+  st.style.top = ((window.innerHeight - 1080 * s) / 2) + 'px';
+}
+
+var annIndex = 0, newsKey = '', logoKey = '';
+function renderStatic() {
+  var st = data.settings;
+  el('schoolName').textContent = st.name;
+  el('schoolSub').textContent = st.sub;
+  el('qrBox').hidden = st.qr === false;
+  if (/^#[0-9a-f]{3,8}$/i.test(st.accent || '')) document.documentElement.style.setProperty('--accent', st.accent);
+  if (logoKey !== st.logo) {
+    logoKey = st.logo; var logo = el('logo'); logo.innerHTML = '';
+    if (st.logo) { var li = new Image(); li.src = st.logo; li.alt = 'شعار المدرسة'; logo.appendChild(li); } else logo.textContent = 'ح';
+  }
+  var h = data.honor || {};
+  el('honorName').textContent = h.name || '—';
+  el('honorSub').textContent = [h.cls ? 'الصف ' + h.cls : '', h.why].filter(Boolean).join(' · ');
+  var av = el('avatar'); av.innerHTML = '';
+  if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
+  else av.textContent = (h.name || 'ح').trim().charAt(0);
+  renderEvents(); renderNews();
+  if (annIndex >= data.ann.length) annIndex = 0;
+  showAnn(annIndex, true);
+}
+
+function renderEvents() {
+  var box = el('events'); box.innerHTML = '';
+  var n = nowLocal(), today = Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate());
+  var list = data.events.map(function (e) { var t = parseDate(e.date); return { t: e.t, s: e.s || '', days: t === null ? null : Math.round((t - today) / 86400000) }; })
+    .filter(function (e) { return e.days !== null && e.days >= 0; })
+    .sort(function (a, b) { return a.days - b.days; }).slice(0, 3);
+  if (!list.length) { box.innerHTML = '<div class="empty">لا توجد فعاليات قادمة</div>'; return; }
+  list.forEach(function (e) {
+    var row = document.createElement('div'); row.className = 'ev';
+    var d = document.createElement('div'); d.className = 'days' + (e.days <= 1 ? ' soon' : '');
+    if (e.days === 0) d.innerHTML = '<b style="font-size:26px">اليوم</b>';
+    else if (e.days === 1) d.innerHTML = '<b style="font-size:26px">غدًا</b>';
+    else { var b = document.createElement('b'); b.textContent = ar(e.days); var sp = document.createElement('span'); sp.textContent = e.days <= 10 ? 'أيام' : 'يومًا'; d.appendChild(b); d.appendChild(sp); }
+    var tx = document.createElement('div');
+    var t1 = document.createElement('div'); t1.className = 'ev-t'; t1.textContent = e.t;
+    var t2 = document.createElement('div'); t2.className = 'ev-s'; t2.textContent = e.s;
+    tx.appendChild(t1); tx.appendChild(t2); row.appendChild(d); row.appendChild(tx); box.appendChild(row);
+  });
+}
+
+function renderNews() {
+  var items = data.news.length ? data.news : [data.settings.name];
+  var key = items.join('|'); if (key === newsKey) return; newsKey = key;
+  var track = el('track'); track.innerHTML = ''; track.style.animation = 'none';
+  for (var k = 0; k < 2; k++) items.forEach(function (n) {
+    var s = document.createElement('span'); s.textContent = n; track.appendChild(s);
+    var sep = document.createElement('span'); sep.className = 'sep'; sep.textContent = '•'; track.appendChild(sep);
+  });
+  void track.offsetWidth;
+  track.style.animation = 'tick ' + Math.max(15, (track.scrollWidth / 2) / 90) + 's linear infinite';
+}
+
+function showAnn(i, instant) {
+  var a = data.ann[i] || data.ann[0]; if (!a) return;
+  var txt = el('annText'), img = el('annImg');
+  function apply() {
+    el('annTitle').textContent = a.t; el('annBody').textContent = a.b || '';
+    img.innerHTML = '';
+    if (a.img) { var im = new Image(); im.src = a.img; im.alt = ''; img.appendChild(im); img.style.display = ''; el('ann').className = 'ann'; }
+    else { img.style.display = 'none'; el('ann').className = 'ann noimg'; }
+    var dots = el('dots'); dots.innerHTML = '';
+    if (data.ann.length > 1) data.ann.forEach(function (_, k) { var d = document.createElement('span'); d.className = 'dot' + (k === i ? ' on' : ''); dots.appendChild(d); });
+    txt.classList.remove('fade'); img.classList.remove('fade');
+  }
+  if (instant) apply(); else { txt.classList.add('fade'); img.classList.add('fade'); setTimeout(apply, 500); }
+}
+function nextAnn() {
+  if (data.ann.length > 1) { annIndex = (annIndex + 1) % data.ann.length; showAnn(annIndex); }
+  var sec = parseInt(data.settings.annSeconds, 10);
+  setTimeout(nextAnn, (sec > 2 ? sec : 12) * 1000);
+}
+
+function tick() {
+  var real = new Date(), n = nowLocal();
+  var h = n.getUTCHours(), m = n.getUTCMinutes();
+  el('time').textContent = ar((h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m);
+  el('ampm').textContent = h < 12 ? 'ص' : 'م';
+  try {
+    el('greg').textContent = new Intl.DateTimeFormat('ar-OM-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
+    el('hijri').textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
+  } catch (e) { el('greg').textContent = ar(n.getUTCDate() + '/' + (n.getUTCMonth() + 1) + '/' + n.getUTCFullYear()); }
+
+  var nowMin = h * 60 + m + n.getUTCSeconds() / 60;
+  var weekend = WEEKEND.indexOf(n.getUTCDay()) !== -1;
+  var box = el('periods'); box.innerHTML = '';
+  var curIdx = -1, nextIdx = -1;
+  data.sched.forEach(function (p, i) {
+    var a = toMin(p[1]), b = toMin(p[2]);
+    if (!weekend && nowMin >= a && nowMin < b) curIdx = i;
+    if (!weekend && nextIdx === -1 && nowMin < a) nextIdx = i;
+  });
+  data.sched.forEach(function (p, i) {
+    var a = toMin(p[1]), b = toMin(p[2]), cls = 'per', badge;
+    if (weekend) badge = '';
+    else if (i === curIdx) { cls += ' now'; badge = 'الآن'; }
+    else if (nowMin >= b) { cls += ' done'; badge = 'انتهت'; }
+    else if (i === nextIdx && curIdx === -1) { cls += ' next'; badge = 'التالية'; }
+    else badge = 'قادمة';
+    var d = document.createElement('div'); d.className = cls;
+    d.innerHTML = '<div class="b"></div><div class="n"></div><div class="t"></div><div class="t"></div>';
+    d.children[0].textContent = badge || ' '; d.children[1].textContent = p[0];
+    d.children[2].textContent = fmt12(a); d.children[3].textContent = fmt12(b);
+    if (i === curIdx) { var bar = document.createElement('div'); bar.className = 'bar'; bar.style.width = Math.round((nowMin - a) / (b - a) * 100) + '%'; d.appendChild(bar); }
+    box.appendChild(d);
+  });
+  var first = toMin(data.sched[0][1]), last = toMin(data.sched[data.sched.length - 1][2]), status = '';
+  if (weekend) status = 'إجازة نهاية الأسبوع';
+  else if (curIdx !== -1) { var nm = data.sched[curIdx][0]; status = 'باقي ' + ar(Math.ceil(toMin(data.sched[curIdx][2]) - nowMin)) + ' دقيقة على نهاية ' + (/الاستراحة|الطابور/.test(nm) ? nm : 'الحصة ' + nm); }
+  else if (nowMin < first) status = 'يبدأ الدوام الساعة ' + fmt12(first);
+  else if (nowMin >= last) status = 'انتهى الدوام لهذا اليوم';
+  else if (nextIdx !== -1) status = 'استراحة قصيرة · ' + data.sched[nextIdx][0] + ' تبدأ ' + fmt12(toMin(data.sched[nextIdx][1]));
+  el('status').textContent = status;
+  renderNow(weekend, curIdx, nowMin, first, last);
+  if (m === 0 && n.getUTCSeconds() < 1) renderEvents();
+}
+
+
+/* ---- القوس الكبير: الحصة الحالية ---- */
+function renderNow(weekend, curIdx, nowMin, first, last) {
+  var name = '', left = '', label = 'الآن', pct = 0, nxt = -1;
+  data.sched.forEach(function (p, i) { if (nxt === -1 && toMin(p[1]) > nowMin) nxt = i; });
+  if (weekend) { name = 'إجازة'; left = 'نهاية الأسبوع'; nxt = -1; }
+  else if (curIdx !== -1) {
+    var p = data.sched[curIdx], a = toMin(p[1]), b = toMin(p[2]);
+    name = /الاستراحة|الطابور/.test(p[0]) ? p[0] : 'الحصة ' + p[0];
+    left = 'باقي <b>' + ar(Math.ceil(b - nowMin)) + '</b> دقيقة';
+    pct = Math.max(0, Math.min(1, (nowMin - a) / (b - a)));
+  }
+  else if (nowMin < first) { label = 'صباح الخير'; name = 'قبل الدوام'; left = 'يبدأ ' + fmt12(first); }
+  else if (nowMin >= last) { label = 'إلى اللقاء'; name = 'انتهى الدوام'; left = 'نراكم غدًا'; pct = 1; nxt = -1; }
+  else { name = 'بين الحصص'; left = 'استعداد'; }
+  el('nowLabel').textContent = label;
+  el('nowName').textContent = name;
+  el('nowLeft').innerHTML = left;
+  el('nowBar').style.width = Math.round(pct * 100) + '%';
+  if (nxt !== -1 && curIdx !== nxt) {
+    el('nextBox').hidden = false;
+    el('nextName').textContent = data.sched[nxt][0];
+    el('nextTime').textContent = fmt12(toMin(data.sched[nxt][1]));
+  } else el('nextBox').hidden = true;
+}
+
+/* ---- العرض بملء الشاشة ---- */
+function mediaSource(item) {
+  if (item.img) return { kind: 'image', src: item.img };
+  var url = item.url, m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/|live\/))([\w-]{11})/);
+  if (m) return { kind: 'youtube', id: m[1] };
+  m = url.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:.*&)?id=)([\w-]{20,})/);
+  if (m) return { kind: 'drive', id: m[1] };
+  if (/\.(mp4|webm|mov|m4v|ogv)(\?|#|$)/i.test(url)) return { kind: 'video', src: url };
+  return { kind: 'image', src: url };
+}
+var mode = 'main', mainUntil = 0, mediaIdx = 0, mediaUntil = 0, mediaKey = '';
+function mainSeconds() { var v = parseInt(data.settings.mainSeconds, 10); return v > 4 ? v : 60; }
+function hideMedia() {
+  var box = el('media'); box.classList.remove('on'); mediaKey = '';
+  setTimeout(function () { if (!mediaKey) { box.classList.remove('show'); box.innerHTML = ''; } }, 600);
+}
+function playMedia(item, loop) {
+  var box = el('media'), src = mediaSource(item), now = Date.now(), node, sound = !!data.settings.sound, dur = parseInt(item.dur, 10) || 0;
+  mediaKey = item._id + '|' + (item.url || '') + '|' + loop;
+  box.innerHTML = '';
+  if (src.kind === 'youtube') {
+    node = document.createElement('iframe'); node.allow = 'autoplay; encrypted-media';
+    node.src = 'https://www.youtube.com/embed/' + src.id + '?autoplay=1&controls=0&rel=0&modestbranding=1&playsinline=1&loop=1&playlist=' + src.id + '&mute=' + (sound ? 0 : 1);
+    mediaUntil = loop ? 0 : now + (dur || 60) * 1000;
+  } else if (src.kind === 'video') {
+    node = document.createElement('video');
+    node.src = src.src; node.autoplay = true; node.muted = !sound; node.playsInline = true; node.loop = !!loop;
+    node.onended = function () { if (!loop) nextMedia(); };
+    node.onerror = function () { if (!loop) nextMedia(); };
+    mediaUntil = loop ? 0 : (dur ? now + dur * 1000 : now + 15 * 60 * 1000);
+    try { var pr = node.play(); if (pr && pr.catch) pr.catch(function () { node.muted = true; node.play(); }); } catch (e) {}
+  } else if (src.kind === 'drive') {
+    node = new Image(); node.src = 'https://lh3.googleusercontent.com/d/' + src.id;
+    node.onerror = function () {
+      var f = document.createElement('iframe'); f.allow = 'autoplay'; f.src = 'https://drive.google.com/file/d/' + src.id + '/preview';
+      box.innerHTML = ''; box.appendChild(f);
+      if (!loop && !dur) mediaUntil = Date.now() + 60 * 1000;
+    };
+    mediaUntil = loop ? 0 : now + (dur || 15) * 1000;
+  } else {
+    node = new Image(); node.src = src.src;
+    node.onerror = function () { if (!loop) nextMedia(); };
+    mediaUntil = loop ? 0 : now + (dur || 15) * 1000;
+  }
+  box.appendChild(node); box.classList.add('show');
+  setTimeout(function () { box.classList.add('on'); }, 30);
+}
+function mediaList() { return data.media.filter(function (m) { return m.show !== false; }); }
+function nextMedia() {
+  var list = mediaList(); mediaIdx++;
+  if (mediaIdx >= list.length) { mode = 'main'; mainUntil = Date.now() + mainSeconds() * 1000; hideMedia(); }
+  else playMedia(list[mediaIdx], false);
+}
+function mediaTick() {
+  var now = Date.now();
+  var pinned = data.media.filter(function (m) { return m.pin; })[0];
+  if (pinned) { if (mediaKey !== pinned._id + '|' + (pinned.url || '') + '|true') { mode = 'pinned'; playMedia(pinned, true); } return; }
+  if (mode === 'pinned') { mode = 'main'; mainUntil = now + mainSeconds() * 1000; hideMedia(); return; }
+  var list = mediaList();
+  if (mode === 'main') {
+    if (!mainUntil) mainUntil = now + mainSeconds() * 1000;
+    if (list.length && now >= mainUntil) { mode = 'media'; mediaIdx = 0; playMedia(list[0], false); }
+  } else if (mode === 'media') {
+    if (!list.length) { mode = 'main'; mainUntil = now + mainSeconds() * 1000; hideMedia(); }
+    else if (mediaUntil && now >= mediaUntil) nextMedia();
+  }
+}
+
+
+/* ---- باركود لوحة التحكم: يفتح نفس الرابط مع #admin ---- */
+function drawQR() {
+  var box = el('qr'); if (!box || !window.QRLib) return;
+  try {
+    var url = location.href.split('#')[0] + '#admin';
+    var q = new QRLib.QRCode(-1, QRLib.ECL.M); q.addData(url); q.make();
+    var n = q.getModuleCount(), pad = 2, d = '';
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) d += 'M' + (c + pad) + ' ' + (r + pad) + 'h1v1h-1z';
+    box.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + (n + pad * 2) + ' ' + (n + pad * 2) + '" shape-rendering="crispEdges"><path fill="#1E1B4B" d="' + d + '"/></svg>';
+  } catch (e) { el('qrBox').hidden = true; }
+}
+
+function startTV() {
+  document.body.className = 'tv';
+  el('tv').hidden = false;
+  try { var saved = localStorage.getItem('school-screen-v2'); if (saved) raw = JSON.parse(saved); } catch (e) {}
+  data = normalize(raw);
+  fit(); window.addEventListener('resize', fit);
+  drawQR(); renderStatic(); tick();
+  setInterval(tick, 1000); setInterval(mediaTick, 1000);
+  setTimeout(nextAnn, 12000);
+  setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
+  try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
+  if (!db) { // بدون إعداد: رسالة. بدون إنترنت وقت التشغيل: آخر محتوى محفوظ، ونعيد المحاولة بعد دقيقة
+    if (!FIREBASE_CONFIG) el('setupMsg').hidden = false;
+    else { el('offline').hidden = false; setTimeout(function () { location.reload(); }, 60000); }
+    return;
+  }
+  db.ref('.info/connected').on('value', function (s) { el('offline').hidden = s.val() === true; });
+  db.ref('screen').on('value', function (snap) {
+    raw = snap.val() || DEFAULT;
+    try { localStorage.setItem('school-screen-v2', JSON.stringify(raw)); } catch (e) {}
+    data = normalize(raw);
+    renderStatic();
+  });
+}
+
+/* =====================================================
+   لوحة التحكم
+   ===================================================== */
+var ref = function (p) { return db.ref('screen' + (p ? '/' + p : '')); };
+var current = {}, activeTab = 'ann';
+var TABS = [['ann', 'الإعلانات'], ['media', 'عرض كامل'], ['honor', 'طالب الأسبوع'], ['news', 'الأخبار'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
+
+function toast(msg) { var t = el('toast'); t.textContent = msg || 'تم الحفظ'; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1600); }
+function save(path, value) { return ref(path).set(value).then(function () { toast(); }).catch(function (e) { toast('ما انحفظ: ' + (e.code === 'PERMISSION_DENIED' ? 'ما عندك صلاحية' : e.message)); }); }
+function h(tag, attrs, kids) {
+  var n = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) {
+    if (k === 'text') n.textContent = attrs[k];
+    else if (k.slice(0, 2) === 'on') n.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] !== undefined && attrs[k] !== null && attrs[k] !== false) n.setAttribute(k, attrs[k] === true ? '' : attrs[k]);
+  });
+  (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+  return n;
+}
+var uid = 0;
+function field(label, value, onSave, opt) {
+  opt = opt || {}; var id = 'f' + (++uid);
+  var input = opt.multiline ? h('textarea', { class: 'in', id: id, rows: 3, placeholder: opt.ph || '' }) : h('input', { class: 'in', id: id, type: opt.type || 'text', placeholder: opt.ph || '', dir: opt.dir, min: opt.min, inputmode: opt.inputmode });
+  input.value = value === undefined || value === null ? '' : value;
+  input.addEventListener('change', function () { onSave(opt.type === 'number' ? (parseFloat(input.value) || 0) : input.value); });
+  return h('div', { class: 'fl' }, [h('label', { for: id, text: label }), input]);
+}
+function toggle(label, checked, onSave) {
+  var input = h('input', { type: 'checkbox', role: 'switch' }); input.checked = !!checked;
+  input.addEventListener('change', function () { onSave(input.checked); });
+  return h('label', { class: 'sw' }, [h('span', { text: label }), input, h('span', { class: 'tr', 'aria-hidden': 'true' })]);
+}
+function resizeImage(file, max) {
+  return new Promise(function (resolve, reject) {
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = Math.min(1, max / Math.max(img.width, img.height));
+        var c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', 0.82));
+      };
+      img.onerror = reject; img.src = r.result;
+    };
+    r.onerror = reject; r.readAsDataURL(file);
+  });
+}
+function imageField(label, value, onSave, max) {
+  var pv = h('div', { class: 'pv' }); var rm;
+  function show(v) { pv.innerHTML = ''; if (v) pv.appendChild(h('img', { src: v, alt: '' })); else pv.textContent = 'بدون صورة'; if (rm) rm.hidden = !v; }
+  var file = h('input', { type: 'file', accept: 'image/*', hidden: true });
+  file.addEventListener('change', function () {
+    var f = file.files[0]; if (!f) return; toast('جاري رفع الصورة…');
+    resizeImage(f, max || 1600).then(function (d) { show(d); onSave(d); }).catch(function () { toast('ما قدرت أقرأ الصورة'); });
+  });
+  var pick = h('button', { class: 'btn ghost', type: 'button', text: 'اختيار صورة', onclick: function () { file.click(); } });
+  rm = h('button', { class: 'btn del', type: 'button', text: 'إزالة', onclick: function () { show(''); onSave(''); } });
+  show(value);
+  return h('div', { class: 'fl' }, [h('label', { text: label }), h('div', { class: 'imgbox' }, [pv, pick, rm, file])]);
+}
+
+/* ---- قوائم (إعلانات، أخبار، فعاليات، عرض كامل) ---- */
+function listPanel(path, opts) {
+  var wrap = h('div');
+  wrap.appendChild(h('p', { class: 'hint', text: opts.hint }));
+  var addBtn = h('button', { class: 'btn gold full', type: 'button', text: '+ ' + opts.addLabel, onclick: function () {
+    var r = ref(path).push(); var item = Object.assign({}, opts.blank);
+    r.set(item).then(function () { toast('تمت الإضافة'); render(); });
+  } });
+  wrap.appendChild(addBtn); wrap.appendChild(h('div', { style: 'height:12px' }));
+  var items = vals(current[path]).reverse();
+  if (!items.length) wrap.appendChild(h('div', { class: 'card' }, [h('p', { class: 'hint', style: 'margin:0', text: 'لا يوجد شيء بعد. اضغط زر الإضافة.' })]));
+  items.forEach(function (it) {
+    var p = path + '/' + it._id;
+    var card = h('div', { class: 'card' });
+    var head = h('div', { class: 'item-head' }, [h('b', { text: opts.title(it) }), opts.badge ? opts.badge(it) : null]);
+    card.appendChild(head);
+    opts.fields(it, p).forEach(function (f) { card.appendChild(f); });
+    card.appendChild(h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: function () {
+      if (confirm('متأكد تبي تحذفه؟')) ref(p).remove().then(function () { toast('تم الحذف'); render(); });
+    } }));
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+var PANELS = {
+  ann: function () {
+    return listPanel('ann', {
+      hint: 'الإعلانات تتبدل على الشاشة تلقائيًا. الأحدث يطلع أول هنا.',
+      addLabel: 'إعلان جديد', blank: { t: 'إعلان جديد', b: '', img: '', show: true },
+      title: function (it) { return it.t || 'بدون عنوان'; },
+      badge: function (it) { return h('span', { class: 'badge', text: it.show === false ? 'مخفي' : 'ظاهر' }); },
+      fields: function (it, p) { return [
+        field('العنوان', it.t, function (v) { save(p + '/t', v); }),
+        field('النص', it.b, function (v) { save(p + '/b', v); }, { multiline: true }),
+        imageField('صورة (اختياري)', it.img, function (v) { save(p + '/img', v); }),
+        toggle('يظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
+      ]; }
+    });
+  },
+  media: function () {
+    return listPanel('media', {
+      hint: 'صور وفيديوهات تنعرض بملء الشاشة بعد الشاشة الرئيسية. ارفع صورة من جوالك، أو حط رابط يوتيوب أو Google Drive أو رابط فيديو مباشر. "ثبّت الآن" يخليه على الشاشة باستمرار.',
+      addLabel: 'صورة أو فيديو', blank: { label: 'عرض جديد', url: '', img: '', dur: 15, show: true, pin: false },
+      title: function (it) { return it.label || 'بدون اسم'; },
+      badge: function (it) { return h('span', { class: 'badge' + (it.pin ? ' pin' : ''), text: it.pin ? 'مثبّت الآن' : (it.show === false ? 'مخفي' : 'ظاهر') }); },
+      fields: function (it, p) { return [
+        field('الاسم (لك أنت)', it.label, function (v) { save(p + '/label', v); }),
+        imageField('صورة من الجوال', it.img, function (v) { save(p + '/img', v); }, 1920),
+        field('أو رابط (يوتيوب، درايف، فيديو)', it.url, function (v) { save(p + '/url', v.trim()); }, { type: 'url', dir: 'ltr', ph: 'https://' }),
+        field('المدة بالثواني (فاضي للفيديو = لين يخلص)', it.dur, function (v) { save(p + '/dur', v); }, { type: 'number', inputmode: 'numeric', min: 0 }),
+        toggle('يظهر في العرض', it.show !== false, function (v) { save(p + '/show', v); }),
+        toggle('ثبّت الآن على الشاشة', !!it.pin, function (v) { save(p + '/pin', v).then(render); })
+      ]; }
+    });
+  },
+  news: function () {
+    return listPanel('news', {
+      hint: 'الأخبار تتحرك في الشريط أسفل الشاشة.',
+      addLabel: 'خبر جديد', blank: { t: 'خبر جديد', show: true },
+      title: function (it) { return it.t || 'خبر'; },
+      badge: function (it) { return h('span', { class: 'badge', text: it.show === false ? 'مخفي' : 'ظاهر' }); },
+      fields: function (it, p) { return [
+        field('نص الخبر', it.t, function (v) { save(p + '/t', v); }),
+        toggle('يظهر في الشريط', it.show !== false, function (v) { save(p + '/show', v); })
+      ]; }
+    });
+  },
+  events: function () {
+    return listPanel('events', {
+      hint: 'الشاشة تحسب الأيام الباقية لحالها، والفعاليات اللي فات تاريخها تختفي.',
+      addLabel: 'فعالية جديدة', blank: { t: 'فعالية جديدة', date: '', s: '' },
+      title: function (it) { return it.t || 'فعالية'; },
+      fields: function (it, p) { return [
+        field('اسم الفعالية', it.t, function (v) { save(p + '/t', v); }),
+        field('التاريخ', it.date, function (v) { save(p + '/date', v); }, { type: 'date' }),
+        field('الوقت أو المكان', it.s, function (v) { save(p + '/s', v); }, { ph: 'مثال: الساعة ٨ صباحًا · الملعب' })
+      ]; }
+    });
+  },
+  honor: function () {
+    var it = current.honor || {};
+    return h('div', { class: 'card' }, [
+      h('p', { class: 'hint', style: 'margin:0', text: 'يظهر في الجهة اليسرى من الشاشة.' }),
+      field('اسم الطالب', it.name, function (v) { save('honor/name', v); }),
+      field('الصف', it.cls, function (v) { save('honor/cls', v); }, { ph: 'مثال: العاشر ١' }),
+      field('سبب التكريم', it.why, function (v) { save('honor/why', v); }),
+      imageField('صورة الطالب', it.img, function (v) { save('honor/img', v); }, 600)
+    ]);
+  },
+  sched: function () {
+    var rows = (current.sched && current.sched.length ? current.sched : DEFAULT.sched).map(function (r) { return r.slice(); });
+    var wrap = h('div');
+    wrap.appendChild(h('p', { class: 'hint', text: 'الشاشة تظلل الحصة الحالية حسب الوقت. بعد التعديل اضغط حفظ.' }));
+    var list = h('div', { class: 'card' });
+    function draw() {
+      list.innerHTML = '';
+      list.appendChild(h('div', { class: 'sched-row', style: 'font-size:13px;color:#4A5A72' }, [h('span', { text: 'الحصة' }), h('span', { text: 'من' }), h('span', { text: 'إلى' }), h('span')]));
+      rows.forEach(function (r, i) {
+        var n = h('input', { class: 'in', 'aria-label': 'اسم الحصة' }); n.value = r[0]; n.oninput = function () { r[0] = n.value; };
+        var a = h('input', { class: 'in', type: 'time', 'aria-label': 'من' }); a.value = r[1]; a.oninput = function () { r[1] = a.value; };
+        var b = h('input', { class: 'in', type: 'time', 'aria-label': 'إلى' }); b.value = r[2]; b.oninput = function () { r[2] = b.value; };
+        var d = h('button', { class: 'icon-btn', type: 'button', 'aria-label': 'حذف الحصة', text: '×', onclick: function () { rows.splice(i, 1); draw(); } });
+        list.appendChild(h('div', { class: 'sched-row' }, [n, a, b, d]));
+      });
+      list.appendChild(h('button', { class: 'btn ghost', type: 'button', text: '+ إضافة حصة', onclick: function () { var last = rows[rows.length - 1]; rows.push(['حصة', last ? last[2] : '07:00', last ? last[2] : '07:40']); draw(); } }));
+    }
+    draw();
+    wrap.appendChild(list);
+    wrap.appendChild(h('button', { class: 'btn full', type: 'button', text: 'حفظ الجدول', onclick: function () {
+      var clean = rows.filter(function (r) { return r[0] && toMin(r[1]) !== null && toMin(r[2]) !== null; });
+      clean.sort(function (x, y) { return toMin(x[1]) - toMin(y[1]); });
+      save('sched', clean).then(render);
+    } }));
+    return wrap;
+  },
+  settings: function () {
+    var s = Object.assign({}, DEFAULT.settings, current.settings || {});
+    return h('div', {}, [
+      h('div', { class: 'card' }, [
+        h('h3', { text: 'المدرسة' }),
+        field('اسم المدرسة', s.name, function (v) { save('settings/name', v); }),
+        field('السطر الثاني', s.sub, function (v) { save('settings/sub', v); }),
+        imageField('الشعار', s.logo, function (v) { save('settings/logo', v); }, 400),
+        field('اللون الأساسي', s.accent, function (v) { save('settings/accent', v); }, { type: 'color' })
+      ]),
+      h('div', { class: 'card' }, [
+        h('h3', { text: 'التوقيت' }),
+        field('كل كم ثانية يتبدل الإعلان', s.annSeconds, function (v) { save('settings/annSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 3 }),
+        field('كم ثانية تبقى الشاشة الرئيسية قبل العرض الكامل', s.mainSeconds, function (v) { save('settings/mainSeconds', v); }, { type: 'number', inputmode: 'numeric', min: 5 }),
+        toggle('تشغيل صوت الفيديو', !!s.sound, function (v) { save('settings/sound', v); }),
+        toggle('إظهار باركود لوحة التحكم على الشاشة', s.qr !== false, function (v) { save('settings/qr', v); })
+      ]),
+      h('div', { class: 'card' }, [
+        h('h3', { text: 'معاينة' }),
+        h('a', { class: 'btn ghost', href: location.pathname, target: '_blank', rel: 'noopener', text: 'فتح الشاشة في نافذة جديدة' })
+      ])
+    ]);
+  }
+};
+
+function render() {
+  return ref().once('value').then(function (snap) {
+    current = snap.val() || {};
+    if (!snap.exists()) { // أول مرة: نحفظ المحتوى الافتراضي
+      return ref().set(DEFAULT).then(function () { current = JSON.parse(JSON.stringify(DEFAULT)); draw(); });
+    }
+    draw();
+  }).catch(function (e) { el('panel').innerHTML = ''; el('panel').appendChild(h('div', { class: 'card' }, [h('p', { class: 'err', text: 'ما قدرت أقرأ البيانات: ' + e.message })])); });
+  function draw() {
+    var y = window.scrollY;
+    var tabs = el('tabs'); tabs.innerHTML = '';
+    TABS.forEach(function (t) {
+      tabs.appendChild(h('button', { class: 'tab' + (t[0] === activeTab ? ' on' : ''), type: 'button', 'aria-pressed': t[0] === activeTab ? 'true' : 'false', text: t[1], onclick: function () { activeTab = t[0]; draw(); window.scrollTo(0, 0); } }));
+    });
+    var panel = el('panel'); panel.innerHTML = '';
+    panel.appendChild(PANELS[activeTab]());
+    window.scrollTo(0, y);
+  }
+}
+
+function startAdmin() {
+  document.body.className = 'admin';
+  el('adminWrap').hidden = false;
+  if (!db) {
+    el('loginView').hidden = false; el('loginForm').hidden = true;
+    el('loginView').appendChild(h('div', { class: 'card' }, [h('p', { class: 'hint', style: 'margin:0', text: 'النظام ما انربط بـ Firebase بعد. أرسل إعدادات Firebase عشان تنحط في الملف.' })]));
+    return;
+  }
+  el('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault(); el('lgErr').textContent = ''; el('loginForm').classList.add('busy');
+    var user = el('lgEmail').value.trim().toLowerCase();
+    if (user.indexOf('@') === -1) user = user + USER_DOMAIN;
+    auth.signInWithEmailAndPassword(user, el('lgPass').value).catch(function (err) {
+      el('lgErr').textContent = /wrong-password|invalid-credential|user-not-found|invalid-login|invalid-email/.test(err.code) ? 'اسم المستخدم أو كلمة السر غلط' : 'ما قدرت أدخل: ' + err.message;
+    }).then(function () { el('loginForm').classList.remove('busy'); });
+  });
+  el('logoutBtn').addEventListener('click', function () { auth.signOut(); });
+  db.ref('.info/connected').on('value', function (s) {
+    var on = s.val() === true; el('liveDot').className = 'live' + (on ? '' : ' off');
+    el('liveTxt').textContent = on ? 'متصل · التعديلات تطلع على الشاشة فورًا' : 'غير متصل بالإنترنت';
+  });
+  auth.onAuthStateChanged(function (u) {
+    el('loginView').hidden = !!u; el('admin').hidden = !u;
+    if (u) render();
+  });
+}
+
+if (isAdmin) startAdmin(); else startTV();
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
