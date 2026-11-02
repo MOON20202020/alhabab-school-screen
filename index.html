@@ -1837,7 +1837,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v7';
+var APP_VERSION = '2026-11-02-v8';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2260,7 +2260,7 @@ function tick() {
     else badge = 'قادمة';
     var d = document.createElement('div'); d.className = cls;
     d.innerHTML = '<div class="b"></div><div class="n"></div><div class="t"></div><div class="t"></div>';
-    d.children[0].textContent = badge || ' '; d.children[1].textContent = p[0];
+    d.children[0].textContent = badge || ' '; d.children[1].textContent = perLabel(p[0]);
     d.children[2].textContent = fmt12(a); d.children[3].textContent = fmt12(b);
     if (i === curIdx) { var bar = document.createElement('div'); bar.className = 'bar'; bar.style.width = Math.round((nowMin - a) / (b - a) * 100) + '%'; d.appendChild(bar); }
     box.appendChild(d);
@@ -2272,16 +2272,28 @@ function tick() {
   }
   var first = toMin(data.sched[0][1]), last = toMin(data.sched[data.sched.length - 1][2]), status = '';
   if (weekend) status = 'إجازة نهاية الأسبوع';
-  else if (curIdx !== -1) { var nm = data.sched[curIdx][0]; status = 'باقي ' + ar(Math.ceil(toMin(data.sched[curIdx][2]) - nowMin)) + ' دقيقة على نهاية ' + (/الاستراحة|الطابور/.test(nm) ? nm : 'الحصة ' + nm); }
+  else if (curIdx !== -1) { var nm = data.sched[curIdx][0]; status = 'باقي ' + ar(Math.ceil(toMin(data.sched[curIdx][2]) - nowMin)) + ' دقيقة على نهاية ' + perLabel(nm); }
   else if (nowMin < first) status = 'يبدأ الدوام الساعة ' + fmt12(first);
   else if (nowMin >= last) status = 'انتهى الدوام لهذا اليوم';
-  else if (nextIdx !== -1) status = 'استراحة قصيرة · ' + data.sched[nextIdx][0] + ' تبدأ ' + fmt12(toMin(data.sched[nextIdx][1]));
+  else if (nextIdx !== -1) status = 'استراحة قصيرة · ' + perLabel(data.sched[nextIdx][0]) + ' تبدأ ' + fmt12(toMin(data.sched[nextIdx][1]));
   el('status').textContent = status;
   renderNow(weekend, curIdx, nowMin, first, last);
   if (m === 0 && n.getUTCSeconds() < 1) renderEvents();
   if (n.getUTCSeconds() < 1) renderWisdom();
 }
 
+
+/* ---- اسم الحصة برقمها: «الثانية» تطلع «الحصة 2» ---- */
+var ORD = ['الأولى', 'الثانية', 'الثالثة', 'الرابعة', 'الخامسة', 'السادسة', 'السابعة', 'الثامنة', 'التاسعة', 'العاشرة'];
+function perLabel(nm) {
+  nm = String(nm || '').trim();
+  if (/الاستراحة|استراحة|الطابور|طابور|الصلاة|صلاة/.test(nm)) return nm;
+  var k = ORD.indexOf(nm.replace(/^الحصة\s+/, '').replace(/ى$/, 'ى'));
+  if (k >= 0) return 'الحصة ' + (k + 1);
+  var d = ar(nm).match(/^(?:الحصة\s*)?(\d+)$/);
+  if (d) return 'الحصة ' + d[1];
+  return /^الحصة/.test(nm) ? nm : 'الحصة ' + nm;
+}
 
 /* ---- القوس الكبير: الحصة الحالية ---- */
 function renderNow(weekend, curIdx, nowMin, first, last) {
@@ -2290,7 +2302,7 @@ function renderNow(weekend, curIdx, nowMin, first, last) {
   if (weekend) { name = 'إجازة'; left = 'نهاية الأسبوع'; nxt = -1; }
   else if (curIdx !== -1) {
     var p = data.sched[curIdx], a = toMin(p[1]), b = toMin(p[2]);
-    name = /الاستراحة|الطابور/.test(p[0]) ? p[0] : 'الحصة ' + p[0];
+    name = perLabel(p[0]);
     left = 'باقي <b>' + ar(Math.ceil(b - nowMin)) + '</b> دقيقة';
     pct = Math.max(0, Math.min(1, (nowMin - a) / (b - a)));
   }
