@@ -1857,7 +1857,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v15';
+var APP_VERSION = '2026-11-02-v16';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2094,7 +2094,7 @@ function renderWisdom() {
       var o1 = document.createElement('span'); o1.className = 'br'; o1.textContent = '﴿'; p.appendChild(o1);
       p.appendChild(document.createTextNode(v[0]));
       var o2 = document.createElement('span'); o2.className = 'br'; o2.textContent = '﴾'; p.appendChild(o2);
-      if (oneLine(32, 22)) break;
+      if (oneLine(Math.round(32 * TEXT_SCALE), 21)) break;
       k = (k + 1) % N;
     }
     refEl.textContent = 'سورة ' + QURAN.s[v[1]] + '، الآية ' + ar(v[2]);
@@ -2106,7 +2106,7 @@ function renderWisdom() {
     p.className = ''; refEl.textContent = '';
     for (var j = 0; j < wl.length; j++) {
       t = wl[(i0 + j) % wl.length]; p.textContent = t;
-      if (oneLine(30, 20)) break;
+      if (oneLine(Math.round(30 * TEXT_SCALE), 19)) break;
       if (j === wl.length - 1) { p.textContent = wl[i0]; p.style.fontSize = '20px'; } // ولا وحدة تكفي: تنقص بنقاط
     }
   }
@@ -2636,7 +2636,21 @@ function latinDigits(root) { // يحوّل أي أرقام عربية مكتوب
 function freshReload(ver) { // نفتح الصفحة برابط جديد عشان المتصفح ما يرجع النسخة القديمة المخزنة
   try { var u = new URL(location.href); u.searchParams.set('v', ver || Date.now()); location.replace(u.toString()); } catch (e) { location.reload(); }
 }
+var TEXT_SCALE = 0.92; // تصغير خط الشاشة كله شوي
+function scaleFonts(k) {
+  function walk(rules) {
+    for (var i = 0; i < rules.length; i++) {
+      var r = rules[i];
+      if (r.cssRules && !r.selectorText) { walk(r.cssRules); continue; }
+      if (!r.style || !r.style.fontSize) continue;
+      var m = /^([\d.]+)px$/.exec(r.style.fontSize);
+      if (m) r.style.setProperty('font-size', (parseFloat(m[1]) * k).toFixed(1) + 'px', r.style.getPropertyPriority('font-size'));
+    }
+  }
+  for (var j = 0; j < document.styleSheets.length; j++) { try { walk(document.styleSheets[j].cssRules); } catch (e) {} }
+}
 function startTV() {
+  scaleFonts(TEXT_SCALE);
   latinDigits(document.body);
   new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === 'characterData') { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(m.target.nodeValue)) m.target.nodeValue = ar(m.target.nodeValue); } else m.addedNodes.forEach(function (x) { if (x.nodeType === 3) { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(x.nodeValue)) x.nodeValue = ar(x.nodeValue); } else if (x.nodeType === 1) latinDigits(x); }); }); })
     .observe(document.body, { childList: true, subtree: true, characterData: true });
