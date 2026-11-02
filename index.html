@@ -211,6 +211,7 @@
   .wisdom .wref { margin-top: 4px; font-size: 18px; font-weight: 700; color: #99F6E4; }
   .wisdom .wref:empty { display: none; }
   .wisdom .wq { position: absolute; left: 18px; top: 14px; color: rgba(255,255,255,.18); }
+  .wisdom p, .wisdom p.ayah { display: block !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-line-clamp: unset !important; }
   .wisdom p.show { animation: wisin 1.2s cubic-bezier(.16,1,.3,1) both; }
   @keyframes wisin { from { opacity: 0; clip-path: inset(0 0 0 100%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
   #stage aside { gap: 22px !important; }
@@ -1840,7 +1841,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v11';
+var APP_VERSION = '2026-11-02-v12';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2061,25 +2062,37 @@ function renderWisdom() {
   slot = every >= 1440 ? Math.floor(mins / 1440) : Math.floor(mins / every);
   var head = el('wisdomHead'), p = el('wisdom'), refEl = el('wisdomRef'), key, isVerse = useVerses && slot % 2 === 0;
   if (!useVerses) isVerse = false;
+  // سطر واحد فقط: نجرب الآية أو الحكمة بأحجام خط تنازلية، وإذا ما كفاها سطر ننتقل للي بعدها
+  function oneLine(maxPx, minPx) {
+    for (var px = maxPx; px >= minPx; px -= 1) { p.style.fontSize = px + 'px'; if (p.scrollWidth <= p.clientWidth + 1) return true; }
+    return false;
+  }
   if (isVerse) {
-    var N = QURAN.v.length, k = (Math.floor(slot / 2) * 241) % N, v = QURAN.v[k];
-    key = 'v' + k;
+    var N = QURAN.v.length, k0 = (Math.floor(slot / 2) * 241) % N, k = k0, v;
+    key = 'v' + k0;
     if (key === wisdomKey) return;
     head.textContent = 'آية كريمة';
-    p.className = 'ayah'; p.innerHTML = '';
-    var o1 = document.createElement('span'); o1.className = 'br'; o1.textContent = '﴿'; p.appendChild(o1);
-    p.appendChild(document.createTextNode(v[0]));
-    var o2 = document.createElement('span'); o2.className = 'br'; o2.textContent = '﴾'; p.appendChild(o2);
+    for (var tries = 0; tries < 120; tries++) {
+      v = QURAN.v[k];
+      p.className = 'ayah'; p.innerHTML = '';
+      var o1 = document.createElement('span'); o1.className = 'br'; o1.textContent = '﴿'; p.appendChild(o1);
+      p.appendChild(document.createTextNode(v[0]));
+      var o2 = document.createElement('span'); o2.className = 'br'; o2.textContent = '﴾'; p.appendChild(o2);
+      if (oneLine(32, 22)) break;
+      k = (k + 1) % N;
+    }
     refEl.textContent = 'سورة ' + QURAN.s[v[1]] + '، الآية ' + ar(v[2]);
-    var L = v[0].replace(/[ؐ-ًؚ-ٰٟۖ-ۭ]/g, '').length;
-    p.style.fontSize = (L <= 40 ? 32 : L <= 65 ? 28 : L <= 85 ? 25 : 22) + 'px';
   } else {
-    var w = useVerses ? Math.floor(slot / 2) : slot, t = wl[((w % wl.length) + wl.length) % wl.length];
-    key = 'w' + t;
+    var w = useVerses ? Math.floor(slot / 2) : slot, i0 = ((w % wl.length) + wl.length) % wl.length, t;
+    key = 'w' + i0 + wl[i0];
     if (key === wisdomKey) return;
     head.textContent = 'حكمة اليوم';
-    p.className = ''; p.textContent = t; refEl.textContent = '';
-    p.style.fontSize = (t.length <= 40 ? 30 : t.length <= 70 ? 27 : 24) + 'px';
+    p.className = ''; refEl.textContent = '';
+    for (var j = 0; j < wl.length; j++) {
+      t = wl[(i0 + j) % wl.length]; p.textContent = t;
+      if (oneLine(30, 20)) break;
+      if (j === wl.length - 1) { p.textContent = wl[i0]; p.style.fontSize = '20px'; } // ولا وحدة تكفي: تنقص بنقاط
+    }
   }
   wisdomKey = key;
   void p.offsetWidth; p.classList.add('show');
@@ -2618,6 +2631,7 @@ function startTV() {
   data = normalize(raw);
   fit(); window.addEventListener('resize', fit);
   renderStatic(); tick();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { wisdomKey = ''; renderWisdom(); }); // نعيد القياس بعد ما تحمل الخطوط
   setInterval(tick, 1000); setInterval(mediaTick, 1000); setInterval(rotateHonor, 12000);
   scheduleAnn();
   setTimeout(function () { document.body.classList.add('ready'); }, 3000);
