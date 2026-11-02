@@ -131,6 +131,13 @@
   .honor-info { grid-column: 2; grid-row: 2; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
   .honor-name { font-size: 36px; font-weight: 800; line-height: 1.2; }
   .honor-sub { font-size: 22px; font-weight: 600; line-height: 1.4; color: #3F3A1C; }
+  .honor { transition: background-color .45s ease, border-color .45s ease; }
+  .honor.t { background: #99F6E4; border-color: #2DD4BF; }
+  .honor.t .honor-title { color: var(--c-teal); }
+  .honor.t .honor-sub { color: #134E4A; }
+  .honor.t .avatar { color: var(--c-teal); }
+  .honor .avatar, .honor-info, .honor-title { transition: opacity .4s ease, transform .4s ease; }
+  .honor.swap .avatar, .honor.swap .honor-info, .honor.swap .honor-title { opacity: 0; transform: translateY(10px); }
   .events { flex: 1; min-height: 0; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); padding: 20px 26px 8px; display: flex; flex-direction: column; overflow: hidden; }
   .events h2 { margin: 0 0 6px; font-size: 28px; font-weight: 800; }
   .ev { display: flex; align-items: center; gap: 18px; padding: 7px 0; }
@@ -465,7 +472,7 @@
     <aside>
       <section class="honor">
         <span class="spark s1"></span><span class="spark s2"></span><span class="spark s3"></span>
-        <h2 class="honor-title">طالب الأسبوع</h2>
+        <h2 class="honor-title" id="honorTitle">طالب الأسبوع</h2>
         <div class="avatar" id="avatar"></div>
         <div class="honor-info">
           <div class="honor-name" id="honorName"></div>
@@ -1820,7 +1827,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v5';
+var APP_VERSION = '2026-11-02-v6';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -1841,6 +1848,7 @@ var DEFAULT = {
   news: { n1: { t: 'مدرسة الحباب بن المنذر للتعليم الأساسي', show: true } },
   events: {},
   honor: { name: '', cls: '', why: '', img: '' },
+  teacher: { name: '', subj: '', why: '', img: '' },
   sched: [
     ['الطابور', '07:10', '07:25'], ['الأولى', '07:25', '08:05'], ['الثانية', '08:10', '08:50'],
     ['الثالثة', '08:55', '09:35'], ['الرابعة', '09:40', '10:20'], ['الاستراحة', '10:20', '10:45'],
@@ -1892,6 +1900,7 @@ function normalize(v) {
     news: vals(v.news).filter(function (n) { return n.show !== false && n.t; }).map(function (n) { return n.t; }),
     events: vals(v.events).filter(function (e) { return e.t; }),
     honor: v.honor || DEFAULT.honor,
+    teacher: v.teacher || {},
     sched: sched,
     media: vals(v.media).filter(function (m) { return m.url || m.img || m.file || (m.pages && m.pages.length); }),
     best: v.best || {},
@@ -1918,15 +1927,35 @@ function renderStatic() {
     var li = new Image(); li.src = st.logo || 'school-logo.png'; li.alt = 'شعار المدرسة'; logo.appendChild(li); logo.classList.add('has-img');
     li.onerror = function () { logo.innerHTML = 'ح'; logo.classList.remove('has-img'); };
   }
-  var h = data.honor || {};
-  el('honorName').textContent = h.name || '—';
-  el('honorSub').textContent = [h.cls ? 'الصف ' + h.cls : '', h.why].filter(Boolean).join(' · ');
-  var av = el('avatar'); av.innerHTML = '';
-  if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
-  else av.textContent = (h.name || 'ح').trim().charAt(0);
+  paintHonor();
   renderEvents(); renderNews(); renderWisdom(); renderBest();
   if (annIndex >= data.ann.length) annIndex = 0;
   showAnn(annIndex, true);
+}
+
+/* ---- التكريم: طالب الأسبوع ومعلم الأسبوع بالتناوب في نفس البطاقة ---- */
+var honorWho = 'student';
+function honorPair() {
+  var st = data.honor || {}, te = data.teacher || {};
+  return { st: st, te: te, both: !!(st.name && te.name) };
+}
+function paintHonor() {
+  var p = honorPair();
+  if (!p.both) honorWho = p.te.name && !p.st.name ? 'teacher' : 'student';
+  var t = honorWho === 'teacher', h = t ? p.te : p.st;
+  var card = document.querySelector('.honor'); card.classList.toggle('t', t);
+  el('honorTitle').textContent = t ? 'معلم الأسبوع' : 'طالب الأسبوع';
+  el('honorName').textContent = h.name || '—';
+  el('honorSub').textContent = (t ? [h.subj ? 'معلم ' + h.subj : '', h.why] : [h.cls ? 'الصف ' + h.cls : '', h.why]).filter(Boolean).join(' · ');
+  var av = el('avatar'); av.innerHTML = '';
+  if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
+  else av.textContent = (h.name || (t ? 'م' : 'ط')).replace(/^\s*(أ\.|د\.|الأستاذ|الاستاذ|الأستاذة|أستاذ)\s*/, '').trim().charAt(0);
+}
+function rotateHonor() {
+  if (!honorPair().both || zoomEl) return;
+  var card = document.querySelector('.honor');
+  card.classList.add('swap');
+  setTimeout(function () { honorWho = honorWho === 'teacher' ? 'student' : 'teacher'; paintHonor(); card.classList.remove('swap'); }, 450);
 }
 
 var WISDOM = [
@@ -2538,7 +2567,7 @@ function startTV() {
   data = normalize(raw);
   fit(); window.addEventListener('resize', fit);
   renderStatic(); tick();
-  setInterval(tick, 1000); setInterval(mediaTick, 1000);
+  setInterval(tick, 1000); setInterval(mediaTick, 1000); setInterval(rotateHonor, 12000);
   scheduleAnn();
   setTimeout(function () { document.body.classList.add('ready'); }, 3000);
   setTimeout(function () { document.querySelectorAll('.per').forEach(function (p) { p.classList.add('settled'); }); tick._settled = true; }, 2200);
@@ -2573,7 +2602,7 @@ function startTV() {
    ===================================================== */
 var ref = function (p) { return db.ref('screen' + (p ? '/' + p : '')); };
 var current = {}, activeTab = 'ann';
-var TABS = [['ann', 'الإعلانات'], ['media', 'الملفات والعرض'], ['honor', 'طالب الأسبوع'], ['best', 'الصف المثالي'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
+var TABS = [['ann', 'الإعلانات'], ['media', 'الملفات والعرض'], ['honor', 'طالب ومعلم الأسبوع'], ['best', 'الصف المثالي'], ['news', 'الأخبار'], ['wisdom', 'حكمة اليوم'], ['events', 'الفعاليات'], ['sched', 'الجدول'], ['settings', 'الإعدادات']];
 
 function toast(msg) { var t = el('toast'); t.textContent = msg || 'تم الحفظ'; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(function () { t.classList.remove('on'); }, 1600); }
 function save(path, value) { return ref(path).set(value).then(function () { toast(); }).catch(function (e) { toast('ما انحفظ: ' + (e.code === 'PERMISSION_DENIED' ? 'ما عندك صلاحية' : e.message)); }); }
@@ -2865,14 +2894,24 @@ var PANELS = {
     return wrap;
   },
   honor: function () {
-    var it = current.honor || {};
-    return h('div', { class: 'card' }, [
-      h('p', { class: 'hint', style: 'margin:0', text: 'يظهر في الجهة اليسرى من الشاشة.' }),
+    var it = current.honor || {}, te = current.teacher || {};
+    var wrap = h('div');
+    wrap.appendChild(h('p', { class: 'hint', text: 'يظهرون في الجهة اليسرى من الشاشة. إذا عبّيت الاثنين يتبادلون في نفس البطاقة كل 12 ثانية، وإذا تركت اسم المعلم فاضي يظهر الطالب بس.' }));
+    wrap.appendChild(h('div', { class: 'card' }, [
+      h('h3', { text: 'طالب الأسبوع' }),
       field('اسم الطالب', it.name, function (v) { save('honor/name', v); }),
       field('الصف', it.cls, function (v) { save('honor/cls', v); }, { ph: 'مثال: العاشر 1' }),
       field('سبب التكريم', it.why, function (v) { save('honor/why', v); }),
       imageField('صورة الطالب', it.img, function (v) { save('honor/img', v); }, 600)
-    ]);
+    ]));
+    wrap.appendChild(h('div', { class: 'card' }, [
+      h('h3', { text: 'معلم الأسبوع' }),
+      field('اسم المعلم', te.name, function (v) { save('teacher/name', v.trim()); }),
+      field('المادة', te.subj, function (v) { save('teacher/subj', v.trim()); }, { ph: 'مثال: الرياضيات' }),
+      field('سبب التكريم', te.why, function (v) { save('teacher/why', v); }, { ph: 'مثال: التميز في التدريس' }),
+      imageField('صورة المعلم', te.img, function (v) { save('teacher/img', v); }, 600)
+    ]));
+    return wrap;
   },
   sched: function () {
     var rows = (current.sched && current.sched.length ? current.sched : DEFAULT.sched).map(function (r) { return r.slice(); });
