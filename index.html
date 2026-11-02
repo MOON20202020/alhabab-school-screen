@@ -1791,7 +1791,7 @@ M['index'] = module.exports; })({ exports: {} });
 return { QRCode: M['index'], ECL: M['QRErrorCorrectLevel'] }; })();
 </script>
 <script>
-/* آيات قرآنية مختارة لبطاقة «حكمة اليوم» (٥١٤ آية قصيرة) بالرسم العثماني.
+/* آيات قرآنية مختارة لبطاقة «حكمة اليوم» (514 آية قصيرة) بالرسم العثماني.
    Tanzil Quran Text (Uthmani), Copyright (C) 2007-2024 Tanzil Project — License: Creative Commons Attribution 3.0.
    This copy of the Quran text is carefully produced, highly verified and continuously monitored by a group of specialists at Tanzil Project.
    TERMS OF USE: Permission is granted to copy and distribute verbatim copies of this text, but CHANGING IT IS NOT ALLOWED.
@@ -1820,14 +1820,14 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-01-v4';
+var APP_VERSION = '2026-11-02-v5';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
 
 /* ========= أدوات عامة ========= */
-var AR = '٠١٢٣٤٥٦٧٨٩';
-function ar(s) { return String(s).replace(/[0-9]/g, function (d) { return AR[+d]; }); }
+var AR = '٠١٢٣٤٥٦٧٨٩', FA = '۰۱۲۳۴۵۶۷۸۹';
+function ar(s) { return String(s).replace(/[\u0660-\u0669\u06F0-\u06F9]/g, function (d) { var i = AR.indexOf(d); return String(i >= 0 ? i : FA.indexOf(d)); }); } // كل الأرقام بالإنجليزي
 function el(id) { return document.getElementById(id); }
 function nowLocal() { return new Date(Date.now() + UTC_OFFSET_HOURS * 3600000); }
 function toMin(t) { var m = String(t || '').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : null; }
@@ -1859,12 +1859,12 @@ var DEMO = {
   },
   news: { n1: { t: 'تهنئة لفريق المدرسة بالفوز في بطولة كرة القدم', show: true }, n2: { t: 'موعد اجتماع أولياء الأمور الخميس القادم', show: true } },
   events: {},
-  honor: { name: 'اسم الطالب', cls: 'العاشر ٢', why: 'التفوق والانضباط' },
+  honor: { name: 'اسم الطالب', cls: 'العاشر 2', why: 'التفوق والانضباط' },
   sched: null, media: {}
 };
 (function () { // فعاليات تجريبية بتواريخ قريبة من اليوم
   var n = new Date(Date.now() + 4 * 3600000), add = function (d) { var x = new Date(n.getTime() + d * 86400000); return x.toISOString().slice(0, 10); };
-  DEMO.events = { e1: { t: 'اختبار قصير رياضيات', date: add(1), s: 'الصف العاشر' }, e2: { t: 'رحلة علمية', date: add(4), s: 'الساعة ٧ صباحًا' }, e3: { t: 'اليوم الوطني', date: add(17), s: 'الساحة الرئيسية' } };
+  DEMO.events = { e1: { t: 'اختبار قصير رياضيات', date: add(1), s: 'الصف العاشر' }, e2: { t: 'رحلة علمية', date: add(4), s: 'الساعة 7 صباحًا' }, e3: { t: 'اليوم الوطني', date: add(17), s: 'الساحة الرئيسية' } };
 })();
 
 var isAdmin = /admin/i.test(location.hash) || /[?&]admin\b/i.test(location.search);
@@ -2164,8 +2164,8 @@ function tick() {
   if (tick._t !== tstr) { var te = el('time'); te.innerHTML = tstr; if (tick._t) { te.classList.remove('flip'); void te.offsetWidth; te.classList.add('flip'); } tick._t = tstr; }
   el('ampm').textContent = h < 12 ? 'ص' : 'م';
   try {
-    el('greg').textContent = new Intl.DateTimeFormat('ar-OM-u-nu-arab', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
-    el('hijri').textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-arab', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
+    el('greg').textContent = new Intl.DateTimeFormat('ar-OM-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
+    el('hijri').textContent = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Muscat' }).format(real);
   } catch (e) { el('greg').textContent = ar(n.getUTCDate() + '/' + (n.getUTCMonth() + 1) + '/' + n.getUTCFullYear()); }
 
   var nowMin = h * 60 + m + n.getUTCSeconds() / 60;
@@ -2293,7 +2293,7 @@ function playMedia(item, loop) {
           if (mediaKey !== myKey) return clearInterval(paint._t);
           var s = localState[src.id];
           if (s && s.done) { clearInterval(paint._t); delete fileCache[src.id]; mediaKey = ''; return; }
-          node.textContent = storageApproved() ? 'جاري نقل الفيديو إلى الشاشة… ' + (s && s.n ? Math.floor(s.got / s.n * 100) : 0) + '٪' : 'هذا الفيديو كبير، ويحتاج اعتماد هذه الشاشة للتخزين من لوحة التحكم';
+          node.textContent = storageApproved() ? 'جاري نقل الفيديو إلى الشاشة… ' + (s && s.n ? Math.floor(s.got / s.n * 100) : 0) + '%' : 'هذا الفيديو كبير، ويحتاج اعتماد هذه الشاشة للتخزين من لوحة التحكم';
         };
         paint(); paint._t = setInterval(paint, 2000);
       } else node.textContent = 'تعذر تحميل الفيديو';
@@ -2523,7 +2523,14 @@ function drawQR() {
   try { box.innerHTML = qrSVG(baseURL() + '#admin'); } catch (e) { el('qrBox').hidden = true; }
 }
 
+function latinDigits(root) { // يحوّل أي أرقام عربية مكتوبة في المحتوى إلى أرقام إنجليزية
+  var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
+  while ((n = w.nextNode())) if (/[\u0660-\u0669\u06F0-\u06F9]/.test(n.nodeValue)) n.nodeValue = ar(n.nodeValue);
+}
 function startTV() {
+  latinDigits(document.body);
+  new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === 'characterData') { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(m.target.nodeValue)) m.target.nodeValue = ar(m.target.nodeValue); } else m.addedNodes.forEach(function (x) { if (x.nodeType === 3) { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(x.nodeValue)) x.nodeValue = ar(x.nodeValue); } else if (x.nodeType === 1) latinDigits(x); }); }); })
+    .observe(document.body, { childList: true, subtree: true, characterData: true });
   document.body.className = 'tv';
   el('tv').hidden = false;
   try { var saved = localStorage.getItem('school-screen-v2'); if (saved) raw = JSON.parse(saved); } catch (e) {}
@@ -2651,7 +2658,7 @@ function pdfToPages(file, max) {
     return next().then(function (pages) { if (pdf.numPages > n) toast('عرضت أول ' + n + ' صفحة فقط'); return pages; });
   });
 }
-function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغيرة ونرفعها (٤ أجزاء بالتوازي)
+function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغيرة ونرفعها (4 أجزاء بالتوازي)
   var CH = 700 * 1024, id = 'v' + Date.now().toString(36), n = Math.ceil(f.size / CH), pos = 0, sent = 0;
   function b64(buf) { var u = new Uint8Array(buf), s = '', step = 0x8000; for (var i = 0; i < u.length; i += step) s += String.fromCharCode.apply(null, u.subarray(i, i + step)); return btoa(s); }
   uploading = true;
@@ -2659,7 +2666,7 @@ function uploadVideo(f) { // نقسم الفيديو إلى أجزاء صغير�
     if (pos >= n) return Promise.resolve();
     var i = pos++;
     return f.slice(i * CH, Math.min(f.size, (i + 1) * CH)).arrayBuffer().then(function (buf) { return db.ref('files/' + id + '/c/' + i).set(b64(buf)); })
-      .then(function () { sent++; toast('رفع «' + f.name + '» ' + Math.floor(sent / n * 100) + '٪ — خلّ الصفحة مفتوحة'); return worker(); });
+      .then(function () { sent++; toast('رفع «' + f.name + '» ' + Math.floor(sent / n * 100) + '% — خلّ الصفحة مفتوحة'); return worker(); });
   }
   return Promise.all([worker(), worker(), worker(), worker()]).then(function () {
     return db.ref('files/' + id + '/meta').set({ name: f.name, size: f.size, mime: f.type, n: n });
@@ -2678,7 +2685,7 @@ function uploadFiles(files) {
         return pdfToPages(f, 25).then(function (pages) { return ref('media').push().set({ label: name, pages: pages, dur: 10, show: false, pin: false }); }).then(function () { done++; });
       }
       if (/^video\//.test(f.type) || /\.(mp4|webm|mov|m4v)$/i.test(f.name)) {
-        if (f.size > MAX_VIDEO) { toast('الفيديو أكبر من ٦٠٠ ميجا، قصّه أو ضغطه أولًا'); return; }
+        if (f.size > MAX_VIDEO) { toast('الفيديو أكبر من 600 ميجا، قصّه أو ضغطه أولًا'); return; }
         return uploadVideo(f).then(function (id) { return ref('media').push().set({ label: name, file: id, mime: f.type || 'video/mp4', size: f.size, local: true, dur: 0, show: false, pin: false }); }).then(function () { done++; });
       }
       if (/^image\//.test(f.type)) {
@@ -2735,11 +2742,11 @@ var PANELS = {
     var items = vals(current.media).reverse(), now = Date.now();
     var showing = items.filter(function (m) { return m.pin && (!m.pinUntil || m.pinUntil > now); })[0];
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو فيديو أو ملف PDF من جوالك (الفيديو حتى ٦٠٠ ميجا، ويفضّل MP4)، أو أضف رابط يوتيوب، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
+    wrap.appendChild(h('p', { class: 'hint', text: 'ارفع صورًا أو فيديو أو ملف PDF من جوالك (الفيديو حتى 600 ميجا، ويفضّل MP4)، أو أضف رابط يوتيوب، واعرضه على الشاشة متى ما تبي بزر «اعرض الآن». الملفات المفعّل لها «ضمن العرض التلقائي» تنعرض بالتناوب بعد الشاشة الرئيسية.' }));
     if (showing) {
       wrap.appendChild(h('div', { class: 'card now-card' }, [
         h('b', { text: 'يُعرض الآن على الشاشة: ' + (showing.label || 'ملف') }),
-        h('span', { class: 'hint', style: 'margin:0', text: showing.pinUntil ? 'يتوقف تلقائيًا الساعة ' + new Date(showing.pinUntil).toLocaleTimeString('ar-OM', { hour: 'numeric', minute: '2-digit' }) : 'مستمر حتى توقفه' }),
+        h('span', { class: 'hint', style: 'margin:0', text: showing.pinUntil ? 'يتوقف تلقائيًا الساعة ' + new Date(showing.pinUntil).toLocaleTimeString('ar-OM-u-nu-latn', { hour: 'numeric', minute: '2-digit' }) : 'مستمر حتى توقفه' }),
         h('button', { class: 'btn full', type: 'button', text: 'إيقاف العرض والرجوع للشاشة', onclick: function () { ref('media/' + showing._id).update({ pin: false, pinUntil: null }).then(function () { toast('رجعت الشاشة الرئيسية'); render(); }); } })
       ]));
     }
@@ -2763,7 +2770,7 @@ var PANELS = {
       if (it.file && it.size) thumb.appendChild(h('span', { class: 'mpages', text: fmtGB(it.size) }));
       if (it.pages) thumb.appendChild(h('span', { class: 'mpages', text: it.pages.length + ' صفحة' }));
       var durSel = h('select', { class: 'in', 'aria-label': 'مدة العرض' });
-      [[0, 'حتى أوقفه'], [5, '٥ دقائق'], [15, '١٥ دقيقة'], [30, '٣٠ دقيقة'], [60, 'ساعة']].forEach(function (o) { durSel.appendChild(h('option', { value: o[0], text: o[1] })); });
+      [[0, 'حتى أوقفه'], [5, '5 دقائق'], [15, '15 دقيقة'], [30, '30 دقيقة'], [60, 'ساعة']].forEach(function (o) { durSel.appendChild(h('option', { value: o[0], text: o[1] })); });
       var fields = [
         h('div', { class: 'mrow' }, [thumb, h('div', { class: 'fl', style: 'flex:1' }, [field('الاسم', it.label, function (v) { save(p + '/label', v); })])])
       ];
@@ -2789,15 +2796,15 @@ var PANELS = {
   wisdom: function () {
     var s0 = Object.assign({}, DEFAULT.settings, current.settings || {});
     var sel = h('select', { class: 'in', id: 'wEvery' });
-    [[30, 'كل ٣٠ دقيقة'], [60, 'كل ساعة'], [120, 'كل ساعتين'], [1440, 'مرة في اليوم']].forEach(function (o) { var op = h('option', { value: o[0], text: o[1] }); if ((parseInt(s0.wisdomEvery, 10) || 60) === o[0]) op.selected = true; sel.appendChild(op); });
+    [[30, 'كل 30 دقيقة'], [60, 'كل ساعة'], [120, 'كل ساعتين'], [1440, 'مرة في اليوم']].forEach(function (o) { var op = h('option', { value: o[0], text: o[1] }); if ((parseInt(s0.wisdomEvery, 10) || 60) === o[0]) op.selected = true; sel.appendChild(op); });
     sel.onchange = function () { save('settings/wisdomEvery', +sel.value); };
     var top = h('div', { class: 'card' }, [
       h('h3', { text: 'طريقة العرض' }),
-      toggle('تنويع بين آيات قرآنية (٥١٤ آية) والحكم', s0.verses !== false, function (v) { save('settings/verses', v); }),
+      toggle('تنويع بين آيات قرآنية (514 آية) والحكم', s0.verses !== false, function (v) { save('settings/verses', v); }),
       h('div', { class: 'fl' }, [h('label', { for: 'wEvery', text: 'تتغير' }), sel])
     ]);
     var lp = listPanel('wisdom', {
-      hint: 'الحكم الخاصة بك. إذا ما أضفت شي، تعرض الشاشة ٣٠ حكمة جاهزة، بالتناوب مع الآيات.',
+      hint: 'الحكم الخاصة بك. إذا ما أضفت شي، تعرض الشاشة 30 حكمة جاهزة، بالتناوب مع الآيات.',
       addLabel: 'حكمة جديدة', blank: { t: '', show: true },
       title: function (it) { return it.t || 'حكمة جديدة'; },
       badge: function (it) { return h('span', { class: 'badge', text: it.show === false ? 'مخفية' : 'ظاهرة' }); },
@@ -2828,7 +2835,7 @@ var PANELS = {
       fields: function (it, p) { return [
         field('اسم الفعالية', it.t, function (v) { save(p + '/t', v); }),
         field('التاريخ', it.date, function (v) { save(p + '/date', v); }, { type: 'date' }),
-        field('الوقت أو المكان', it.s, function (v) { save(p + '/s', v); }, { ph: 'مثال: الساعة ٨ صباحًا · الملعب' })
+        field('الوقت أو المكان', it.s, function (v) { save(p + '/s', v); }, { ph: 'مثال: الساعة 8 صباحًا · الملعب' })
       ]; }
     });
   },
@@ -2837,12 +2844,12 @@ var PANELS = {
     function saveWhys() { save('best/why', chosen.length ? chosen : null); }
     var wrap = h('div', { class: 'card' }, [
       h('p', { class: 'hint', style: 'margin:0', text: 'يظهر أسفل لوحة الوقت مع كأس وشارات ملوّنة. تقدر تختار أكثر من سبب، وتضيف أسبابك. عند تغيير الصف تحتفل الشاشة.' }),
-      field('الصف', it.cls, function (v) { save('best/cls', v.trim()); }, { ph: 'مثال: العاشر ٢' }),
-      h('h3', { text: 'أسباب الاختيار (اختر واحد أو أكثر، حتى ٤)' })
+      field('الصف', it.cls, function (v) { save('best/cls', v.trim()); }, { ph: 'مثال: العاشر 2' }),
+      h('h3', { text: 'أسباب الاختيار (اختر واحد أو أكثر، حتى 4)' })
     ]);
     BEST_KINDS.concat(extra).forEach(function (k) {
       wrap.appendChild(toggle(k, chosen.indexOf(k) >= 0, function (on) {
-        if (on && chosen.indexOf(k) < 0) { if (chosen.length >= 4) { toast('الحد ٤ أسباب'); render(); return; } chosen.push(k); }
+        if (on && chosen.indexOf(k) < 0) { if (chosen.length >= 4) { toast('الحد 4 أسباب'); render(); return; } chosen.push(k); }
         if (!on) chosen = chosen.filter(function (x) { return x !== k; });
         saveWhys();
       }));
@@ -2851,7 +2858,7 @@ var PANELS = {
     wrap.appendChild(h('div', { class: 'row' }, [h('div', { class: 'fl' }, [ni]), h('button', { class: 'btn', type: 'button', text: '+ إضافة', onclick: function () {
       var v = ni.value.trim(); if (!v) return;
       if (chosen.indexOf(v) >= 0) { toast('موجود'); return; }
-      if (chosen.length >= 4) { toast('الحد ٤ أسباب'); return; }
+      if (chosen.length >= 4) { toast('الحد 4 أسباب'); return; }
       chosen.push(v); save('best/why', chosen).then(render);
     } })]));
     wrap.appendChild(h('button', { class: 'btn del', type: 'button', text: 'إخفاء من الشاشة', onclick: function () { ref('best').remove().then(function () { toast('تم الإخفاء'); render(); }); } }));
@@ -2862,7 +2869,7 @@ var PANELS = {
     return h('div', { class: 'card' }, [
       h('p', { class: 'hint', style: 'margin:0', text: 'يظهر في الجهة اليسرى من الشاشة.' }),
       field('اسم الطالب', it.name, function (v) { save('honor/name', v); }),
-      field('الصف', it.cls, function (v) { save('honor/cls', v); }, { ph: 'مثال: العاشر ١' }),
+      field('الصف', it.cls, function (v) { save('honor/cls', v); }, { ph: 'مثال: العاشر 1' }),
       field('سبب التكريم', it.why, function (v) { save('honor/why', v); }),
       imageField('صورة الطالب', it.img, function (v) { save('honor/img', v); }, 600)
     ]);
@@ -2967,7 +2974,7 @@ function localStatus(it) {
   if (f && f.done) return { t: 'محفوظ على الشاشة ✓', c: 'ok' };
   if (f && f.err === 'full') return { t: 'مساحة الشاشة ممتلئة', c: 'warn' };
   if ((f && f.err === 'missing') || it.cloudGone) return { t: 'مو موجود على الشاشة، احذفه وارفعه من جديد', c: 'warn' };
-  if (f && f.n) return { t: 'ينتقل للشاشة ' + Math.floor(f.got / f.n * 100) + '٪', c: 'busy' };
+  if (f && f.n) return { t: 'ينتقل للشاشة ' + Math.floor(f.got / f.n * 100) + '%', c: 'busy' };
   return { t: 'بانتظار تشغيل الشاشة عشان ينتقل لها', c: 'busy' };
 }
 function paintStorage() {
@@ -2978,7 +2985,7 @@ function paintStorage() {
   var box = el('storeCard'); if (!box) return;
   box.innerHTML = '';
   box.appendChild(h('h3', { text: 'التخزين على الشاشة' }));
-  box.appendChild(h('p', { class: 'hint', text: 'الفيديو ينرفع مؤقتًا، بعدين الشاشة المعتمدة تنزّله وتحفظه عندها (حتى ٦٠٠ ميجا للمقطع)، وينمسح من السحابة تلقائيًا. لما تحذف الفيديو من هنا ينمسح من الشاشة كمان.' }));
+  box.appendChild(h('p', { class: 'hint', text: 'الفيديو ينرفع مؤقتًا، بعدين الشاشة المعتمدة تنزّله وتحفظه عندها (حتى 600 ميجا للمقطع)، وينمسح من السحابة تلقائيًا. لما تحذف الفيديو من هنا ينمسح من الشاشة كمان.' }));
   var ap = (current && current.devices) || {};
   var list = Object.keys(devices).map(function (k) { return Object.assign({ id: k }, devices[k]); })
     .filter(function (d) { return ap[d.id] || Date.now() - (d.at || 0) < 14 * 86400000; })
@@ -2993,7 +3000,7 @@ function paintStorage() {
     ];
     if (on && d.quota) {
       var pct = Math.min(100, Math.round((d.usage || 0) / d.quota * 100));
-      kids.push(h('div', { class: 'meter', role: 'img', 'aria-label': 'المساحة المستخدمة ' + pct + '٪' }, [h('i', { style: 'width:' + Math.max(2, pct) + '%' })]));
+      kids.push(h('div', { class: 'meter', role: 'img', 'aria-label': 'المساحة المستخدمة ' + pct + '%' }, [h('i', { style: 'width:' + Math.max(2, pct) + '%' })]));
       kids.push(h('span', { class: 'hint', style: 'margin:0', text: 'المستخدم ' + fmtGB(d.usage || 0) + ' · المتبقي تقريبًا ' + fmtGB(free) }));
     }
     kids.push(on
