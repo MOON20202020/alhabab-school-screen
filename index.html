@@ -157,6 +157,13 @@
   .side .events { flex: 1; min-height: 0; width: 100%; box-sizing: border-box; margin-top: 24px; border-radius: 26px !important; color: var(--c-fg); text-align: right; box-shadow: var(--clay-c); }
   aside .best { flex: 1 !important; min-height: 0; margin-top: 0 !important; border-radius: 36px !important; flex-direction: row !important; align-items: center; justify-content: flex-start !important; text-align: right !important; gap: 22px !important; padding: 16px 28px !important; }
   aside .best .bt-ic { width: 88px !important; height: 88px !important; }
+  /* لون مميز للصف المثالي: وردي-برتقالي مع كأس ذهبي */
+  aside .best { background: linear-gradient(135deg, #F97316 0%, #EC4899 55%, #BE185D 100%) !important; border-color: #9D174D !important; color: #fff !important; }
+  aside .best .bt-ic { color: #FDE047 !important; filter: drop-shadow(0 3px 0 rgba(120,20,60,.45)); }
+  aside .best .bt-t { color: #FFE4F1 !important; }
+  aside .best .bt-c { color: #fff !important; text-shadow: 0 3px 0 rgba(120,20,60,.35); }
+  aside .best .bt-b { box-shadow: 0 0 0 2px rgba(255,255,255,.85); }
+  aside .best::after { background: rgba(255,255,255,.28) !important; }
   aside .best .bt-tx { align-items: flex-start !important; gap: 4px !important; min-width: 0; }
   aside .best .bt-t { font-size: 22px !important; }
   aside .best .bt-c { font-size: 48px !important; line-height: 1.1; }
@@ -1850,7 +1857,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v13';
+var APP_VERSION = '2026-11-02-v14';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
