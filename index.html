@@ -111,6 +111,13 @@
   .ann.noimg { grid-template-columns: minmax(0, 1fr); padding: 40px 48px; }
   .ann-img { border-radius: 26px; overflow: hidden; background: var(--c-muted); min-height: 0; transition: opacity .6s; }
   .ann-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .ann-img { position: relative; }
+  .ann-img img.ann-bg { position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(22px) saturate(1.2) brightness(.9); animation: none !important; }
+  .ann-img img.ann-poster { position: relative; object-fit: contain !important; animation: none !important; transform: none !important; filter: drop-shadow(0 8px 18px rgba(0,0,0,.25)); }
+  /* وضع البوستر: الصورة تاخذ البطاقة كلها */
+  .ann.poster { grid-template-columns: minmax(0, 1fr) !important; padding: 18px !important; }
+  .ann.poster .ann-text { display: none !important; }
+  .ann.poster .ann-img { border-radius: 26px; }
   .ann-text { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 18px; transition: opacity .6s; }
   .ann-text::before { content: none; display: none; align-self: flex-start; padding: 6px 22px; border-radius: 999px; background: var(--c-orange); color: #fff; font-size: 24px; font-weight: 800; box-shadow: var(--clay-c); }
   .ann h1 { margin: 0; font-size: 62px; line-height: 1.2; font-weight: 800; color: var(--c-fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1857,7 +1864,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v16';
+var APP_VERSION = '2026-11-02-v17';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -1921,7 +1928,7 @@ function normalize(v) {
   v = v || {};
   var st = {}; var ds = DEFAULT.settings; var vs = v.settings || {};
   Object.keys(ds).forEach(function (k) { st[k] = vs[k] !== undefined && vs[k] !== '' ? vs[k] : ds[k]; });
-  var ann = vals(v.ann).filter(function (a) { return a.show !== false && a.t; });
+  var ann = vals(v.ann).filter(function (a) { return a.show !== false && (a.t || a.img); });
   if (!ann.length) ann = vals(DEFAULT.ann);
   var sched = (v.sched || []).filter(function (p) { return p && p[0] && toMin(p[1]) !== null && toMin(p[2]) !== null; });
   if (!sched.length) sched = DEFAULT.sched;
@@ -2164,7 +2171,13 @@ function showAnn(i, instant) {
   function apply() {
     el('annTitle').textContent = a.t; el('annBody').textContent = a.b || '';
     img.innerHTML = '';
-    if (a.img) { var im = new Image(); im.src = a.img; im.alt = ''; img.appendChild(im); img.style.display = ''; el('ann').className = 'ann'; }
+    if (a.img) { // الصورة تنعرض كاملة بدون قص، وخلفها نسخة مموّهة تعبّي الفراغ
+      var bg = new Image(); bg.src = a.img; bg.alt = ''; bg.className = 'ann-bg'; img.appendChild(bg);
+      var im = new Image(); im.src = a.img; im.alt = a.t || 'إعلان'; im.className = 'ann-poster'; img.appendChild(im);
+      img.style.display = '';
+      var poster = a.poster === true || (!a.t && !a.b);
+      el('ann').className = 'ann' + (poster ? ' poster' : '');
+    }
     else { img.style.display = 'none'; el('ann').className = 'ann noimg'; }
     var dots = el('dots'); dots.innerHTML = ''; var ds = parseInt(data.settings.annSeconds, 10); ds = ds > 2 ? ds : 12; dots.style.setProperty('--d', ds + 's');
     if (data.ann.length > 1) data.ann.forEach(function (_, k) { var d = document.createElement('span'); d.className = 'dot' + (k === i ? ' on' : ''); dots.appendChild(d); });
@@ -2857,7 +2870,8 @@ var PANELS = {
       fields: function (it, p) { return [
         field('العنوان', it.t, function (v) { save(p + '/t', v); }),
         field('النص', it.b, function (v) { save(p + '/b', v); }, { multiline: true }),
-        imageField('صورة (اختياري)', it.img, function (v) { save(p + '/img', v); }),
+        imageField('صورة أو بوستر (اختياري)', it.img, function (v) { save(p + '/img', v); }, 2200),
+        toggle('اعرض الصورة كاملة كبوستر (بدون نص)', it.poster === true, function (v) { save(p + '/poster', v); }),
         toggle('يظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
       ]; }
     });
