@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>شاشة مدرسة الحباب بن المنذر</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Baloo+Bhaijaan+2:wght@400;500;600;700;800&family=Amiri+Quran&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;700&family=Cairo:wght@400;500;600;700;800;900&family=Amiri+Quran&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -35,7 +35,7 @@
     --r: 28px; --bw: 4px;
     --clay: 0 10px 22px rgba(30,27,75,.14), inset -6px -6px 14px rgba(30,27,75,.08), inset 6px 6px 14px rgba(255,255,255,.7);
     --clay-c: 0 10px 22px rgba(30,27,75,.18), inset -6px -6px 14px rgba(0,0,0,.14), inset 6px 6px 14px rgba(255,255,255,.28);
-    --f: 'Baloo Bhaijaan 2', 'IBM Plex Sans Arabic', sans-serif;
+    --f: 'Cairo', 'IBM Plex Sans Arabic', sans-serif; /* Cairo: الهمزة واضحة فوق الألف */
     position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; transform-origin: 0 0;
     background: var(--c-bg); color: var(--c-fg); font-family: var(--f);
     display: flex; flex-direction: column; overflow: hidden;
@@ -1857,7 +1857,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v14';
+var APP_VERSION = '2026-11-02-v15';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
