@@ -153,6 +153,15 @@
   .honor.swap .avatar, .honor.swap .honor-info, .honor.swap .honor-title { opacity: 0; transform: translateY(10px); }
   .events { flex: 1; min-height: 0; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); padding: 20px 26px 8px; display: flex; flex-direction: column; overflow: hidden; }
   .events h2 { margin: 0 0 6px; font-size: 28px; font-weight: 800; }
+  /* الفعاليات داخل اللوحة البنفسجية، والصف المثالي في العمود الأيسر */
+  .side .events { flex: 1; min-height: 0; width: 100%; box-sizing: border-box; margin-top: 24px; border-radius: 26px !important; color: var(--c-fg); text-align: right; box-shadow: var(--clay-c); }
+  aside .best { flex: 1 !important; min-height: 0; margin-top: 0 !important; border-radius: 36px !important; flex-direction: row !important; align-items: center; justify-content: flex-start !important; text-align: right !important; gap: 22px !important; padding: 16px 28px !important; }
+  aside .best .bt-ic { width: 88px !important; height: 88px !important; }
+  aside .best .bt-tx { align-items: flex-start !important; gap: 4px !important; min-width: 0; }
+  aside .best .bt-t { font-size: 22px !important; }
+  aside .best .bt-c { font-size: 48px !important; line-height: 1.1; }
+  aside .best .bt-bs { justify-content: flex-start !important; }
+  aside .best .bt-b { font-size: 20px !important; padding: 3px 14px !important; }
   .ev { display: flex; align-items: center; gap: 18px; padding: 7px 0; }
   .days { width: 76px; height: 70px; border-radius: 22px; color: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: var(--clay-c); background: var(--c-sky); }
   .ev:nth-child(3n+2) .days { background: var(--c-green); }
@@ -466,14 +475,10 @@
       <div class="now-name" id="nowName"></div>
       <div class="now-left" id="nowLeft"></div>
       <div class="meter"><i id="nowBar"></i></div>
-      <div class="best" id="best">
-        <svg class="bt-ic" width="66" height="66" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
-        <div class="bt-tx">
-          <div class="bt-t">الصف المثالي هذا الأسبوع</div>
-          <div class="bt-c" id="bestCls"></div>
-          <div class="bt-bs" id="bestWhy"></div>
-        </div>
-      </div>
+      <section class="events">
+        <h2>الفعاليات القادمة</h2>
+        <div id="events"></div>
+      </section>
     </section>
     <section class="ann" id="ann">
       <div class="ann-img" id="annImg"></div>
@@ -500,9 +505,13 @@
         <p id="wisdom"></p>
         <div class="wref" id="wisdomRef"></div>
       </section>
-      <section class="events">
-        <h2>الفعاليات القادمة</h2>
-        <div id="events"></div>
+      <section class="best" id="best">
+        <svg class="bt-ic" width="66" height="66" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+        <div class="bt-tx">
+          <div class="bt-t">الصف المثالي هذا الأسبوع</div>
+          <div class="bt-c" id="bestCls"></div>
+          <div class="bt-bs" id="bestWhy"></div>
+        </div>
       </section>
     </aside>
     <section class="sched">
@@ -1841,7 +1850,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v12';
+var APP_VERSION = '2026-11-02-v13';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2157,7 +2166,7 @@ function showAnn(i, instant) {
   if (instant) apply(); else { txt.classList.add('fade'); img.classList.add('fade'); setTimeout(apply, 500); }
 }
 /* ---- التنقل بالريموت واللمس ---- */
-var FOCUS = ['.ann', '.honor', '.wisdom', '.events', '.sched', '.side'], focusIdx = -1, focusTimer = null, zoomEl = null;
+var FOCUS = ['.ann', '.honor', '.wisdom', '.best', '.sched', '.side', '.events'], focusIdx = -1, focusTimer = null, zoomEl = null;
 function setFocus(i) {
   document.querySelectorAll('.kfocus').forEach(function (n) { n.classList.remove('kfocus'); });
   focusIdx = i; clearTimeout(focusTimer);
