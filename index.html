@@ -1832,7 +1832,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v9';
+var APP_VERSION = '2026-11-02-v10';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2596,6 +2596,9 @@ function latinDigits(root) { // يحوّل أي أرقام عربية مكتوب
   var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), n;
   while ((n = w.nextNode())) if (/[\u0660-\u0669\u06F0-\u06F9]/.test(n.nodeValue)) n.nodeValue = ar(n.nodeValue);
 }
+function freshReload(ver) { // نفتح الصفحة برابط جديد عشان المتصفح ما يرجع النسخة القديمة المخزنة
+  try { var u = new URL(location.href); u.searchParams.set('v', ver || Date.now()); location.replace(u.toString()); } catch (e) { location.reload(); }
+}
 function startTV() {
   latinDigits(document.body);
   new MutationObserver(function (ms) { ms.forEach(function (m) { if (m.type === 'characterData') { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(m.target.nodeValue)) m.target.nodeValue = ar(m.target.nodeValue); } else m.addedNodes.forEach(function (x) { if (x.nodeType === 3) { if (/[\u0660-\u0669\u06F0-\u06F9]/.test(x.nodeValue)) x.nodeValue = ar(x.nodeValue); } else if (x.nodeType === 1) latinDigits(x); }); }); })
@@ -2615,7 +2618,7 @@ function startTV() {
   setInterval(function () { // تحديث تلقائي: إذا نزل إصدار جديد من الشاشة، تعيد تحميل نفسها
     if (mode !== 'main') return;
     fetch(location.pathname + '?ver=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
-      var m = t.match(/var APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) location.reload();
+      var m = t.match(/var APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) freshReload(m[1]);
     }).catch(function () {});
   }, 3 * 60 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
