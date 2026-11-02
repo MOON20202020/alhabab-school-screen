@@ -132,12 +132,8 @@
   .honor-name { font-size: 36px; font-weight: 800; line-height: 1.2; }
   .honor-sub { font-size: 22px; font-weight: 600; line-height: 1.4; color: #3F3A1C; }
   .honor { transition: background-color .45s ease, border-color .45s ease; }
-  .honor.t { background: #99F6E4; border-color: #2DD4BF; }
-  .honor.t .honor-title { color: var(--c-teal); }
-  .honor.t .honor-sub { color: #134E4A; }
   .honor-sub { display: flex !important; flex-direction: column; align-items: stretch; gap: 2px; white-space: nowrap; overflow: hidden; }
   .hs-why { flex: none !important; width: 100%; font-weight: 700; color: var(--c-primary-d); }
-  .honor.t .hs-why { color: var(--c-teal); }
   .hs-fix { flex-shrink: 0; }
   .hs-why { position: relative; flex: 1; min-width: 0; height: 1.4em; overflow: hidden; }
   .hs-why.moving { -webkit-mask-image: linear-gradient(to left, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%); mask-image: linear-gradient(to left, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%); }
@@ -145,7 +141,6 @@
   .hs-track > span { flex-shrink: 0; }
   .hs-sep { font-size: .7em; opacity: .6; }
   .hs-why.moving .hs-track { padding-right: 14px; }
-  .honor.t .avatar { color: var(--c-teal); }
   .honor .avatar, .honor-info, .honor-title { transition: opacity .4s ease, transform .4s ease; }
   .honor.swap .avatar, .honor.swap .honor-info, .honor.swap .honor-title { opacity: 0; transform: translateY(10px); }
   .events { flex: 1; min-height: 0; border-radius: 36px; border: var(--bw) solid var(--c-border); background: var(--c-card); box-shadow: var(--clay); padding: 20px 26px 8px; display: flex; flex-direction: column; overflow: hidden; }
@@ -1837,7 +1832,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v8';
+var APP_VERSION = '2026-11-02-v9';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
