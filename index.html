@@ -135,6 +135,16 @@
   .honor.t { background: #99F6E4; border-color: #2DD4BF; }
   .honor.t .honor-title { color: var(--c-teal); }
   .honor.t .honor-sub { color: #134E4A; }
+  .honor-sub { display: flex !important; flex-direction: column; align-items: stretch; gap: 2px; white-space: nowrap; overflow: hidden; }
+  .hs-why { flex: none !important; width: 100%; font-weight: 700; color: var(--c-primary-d); }
+  .honor.t .hs-why { color: var(--c-teal); }
+  .hs-fix { flex-shrink: 0; }
+  .hs-why { position: relative; flex: 1; min-width: 0; height: 1.4em; overflow: hidden; }
+  .hs-why.moving { -webkit-mask-image: linear-gradient(to left, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%); mask-image: linear-gradient(to left, transparent 0, #000 18px, #000 calc(100% - 18px), transparent 100%); }
+  .hs-track { position: absolute; top: 0; right: 0; display: flex; align-items: center; gap: 14px; white-space: nowrap; will-change: transform; }
+  .hs-track > span { flex-shrink: 0; }
+  .hs-sep { font-size: .7em; opacity: .6; }
+  .hs-why.moving .hs-track { padding-right: 14px; }
   .honor.t .avatar { color: var(--c-teal); }
   .honor .avatar, .honor-info, .honor-title { transition: opacity .4s ease, transform .4s ease; }
   .honor.swap .avatar, .honor.swap .honor-info, .honor.swap .honor-title { opacity: 0; transform: translateY(10px); }
@@ -1827,7 +1837,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-02-v6';
+var APP_VERSION = '2026-11-02-v7';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -1946,10 +1956,33 @@ function paintHonor() {
   var card = document.querySelector('.honor'); card.classList.toggle('t', t);
   el('honorTitle').textContent = t ? 'معلم الأسبوع' : 'طالب الأسبوع';
   el('honorName').textContent = h.name || '—';
-  el('honorSub').textContent = (t ? [h.subj ? 'معلم ' + h.subj : '', h.why] : [h.cls ? 'الصف ' + h.cls : '', h.why]).filter(Boolean).join(' · ');
+  paintHonorSub(t ? (h.subj ? 'معلم ' + h.subj : '') : (h.cls ? 'الصف ' + h.cls : ''), h.why || '');
   var av = el('avatar'); av.innerHTML = '';
   if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
   else av.textContent = (h.name || (t ? 'م' : 'ط')).replace(/^\s*(أ\.|د\.|الأستاذ|الاستاذ|الأستاذة|أستاذ)\s*/, '').trim().charAt(0);
+}
+function paintHonorSub(fix, why) { // سبب التكريم يتحرك داخل البطاقة إذا كان أطول من المساحة
+  var sub = el('honorSub'); sub.innerHTML = '';
+  if (fix) { var f = document.createElement('span'); f.className = 'hs-fix'; f.textContent = fix; sub.appendChild(f); }
+  if (!why) return;
+  var box = document.createElement('div'); box.className = 'hs-why';
+  var tr = document.createElement('div'); tr.className = 'hs-track';
+  var one = document.createElement('span'); one.textContent = why; tr.appendChild(one);
+  box.appendChild(tr); sub.appendChild(box);
+  function fitWhy() {
+    if (!tr.isConnected) return;
+    tr.style.animation = 'none'; box.classList.remove('moving');
+    while (tr.children.length > 1) tr.removeChild(tr.lastChild);
+    if (tr.scrollWidth <= box.clientWidth + 2) return; // يكفي بدون حركة
+    box.classList.add('moving');
+    var sep = document.createElement('span'); sep.className = 'hs-sep'; sep.textContent = '✦';
+    tr.appendChild(sep); tr.appendChild(one.cloneNode(true)); tr.appendChild(sep.cloneNode(true));
+    void tr.offsetWidth;
+    tr.style.animation = 'tick ' + Math.max(6, (tr.scrollWidth / 2) / 55) + 's linear infinite';
+  }
+  requestAnimationFrame(fitWhy);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWhy);
+  setTimeout(fitWhy, 1500);
 }
 function rotateHonor() {
   if (!honorPair().both || zoomEl) return;
