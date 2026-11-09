@@ -1885,7 +1885,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v26';
+var APP_VERSION = '2026-11-10-v27';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2201,8 +2201,8 @@ function renderNews() {
 function fillFrame(im, box) {
   // إذا شكل الصورة قريب من شكل البطاقة: تعبّي الإطار كامل. وإذا مختلف كثير: تنعرض كاملة والفراغ يتلون بلون الصورة نفسها
   var bw = box.clientWidth || 1, bh = box.clientHeight || 1, r = (im.naturalWidth / im.naturalHeight) / (bw / bh);
-  var cover = false; // الصورة تنعرض كاملة دائمًا بدون أي قص
-  im.style.objectFit = cover ? 'cover' : 'contain';
+  var cover = false;
+  im.style.objectFit = 'fill'; box.style.background = ''; return; // الصورة تنمد على مقاس الإطار بالضبط: كاملة بدون قص وبدون فراغ
   box.classList.toggle('cover', cover);
   if (!cover) {
     try {
@@ -2818,15 +2818,7 @@ function fitToFrame(file) {
         var W = FRAME_W, H = FRAME_H, iw = img.width, ih = img.height;
         var c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d');
         g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
-        // الخلفية: الصورة نفسها مكبّرة لين تعبّي الإطار، ومصغّرة جدًا ثم مكبّرة عشان تطلع مموّهة (يشتغل على كل الجوالات)
-        var sc = Math.max(W / iw, H / ih), sm = document.createElement('canvas'); sm.width = 48; sm.height = Math.round(48 * H / W);
-        var sg = sm.getContext('2d'); sg.imageSmoothingEnabled = true;
-        sg.drawImage(img, (W - iw * sc) / 2 * sm.width / W, (H - ih * sc) / 2 * sm.height / H, iw * sc * sm.width / W, ih * sc * sm.height / H);
-        g.drawImage(sm, 0, 0, W, H);
-        g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, W, H);
-        // الصورة الأصلية كاملة في النص
-        var s2 = Math.min(W / iw, H / ih), dw = iw * s2, dh = ih * s2;
-        g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        g.drawImage(img, 0, 0, W, H); // تنمد الصورة على مقاس الإطار بالضبط
         resolve(c.toDataURL('image/jpeg', 0.86));
       };
       img.onerror = reject; img.src = r.result;
@@ -2951,7 +2943,7 @@ var PANELS = {
       fields: function (it, p) { return [
         field('العنوان', it.t, function (v) { save(p + '/t', v); }),
         field('النص', it.b, function (v) { save(p + '/b', v); }, { multiline: true }),
-        imageField('صورة أو بوستر (اختياري) — تتركّب على إطار الإعلان تلقائيًا بدون ما ينقص منها شي', it.img, function (v) { save(p + '/img', v); }, 2200, true),
+        imageField('صورة أو بوستر (اختياري) — تنمد على مقاس إطار الإعلان تلقائيًا بدون ما ينقص منها شي', it.img, function (v) { save(p + '/img', v); }, 2200, true),
         toggle('يظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
       ]; }
     });
