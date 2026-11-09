@@ -1958,6 +1958,8 @@ function normalize(v) {
   var q = /[?&]lite=([01])/.exec(location.search), lite = q ? q[1] === '1' : (/Android/i.test(navigator.userAgent) || !!window.fully);
   if (lite) document.documentElement.className += ' lite-html', document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('lite'); });
   if (lite && document.body) document.body.classList.add('lite');
+  var hq = /[?&]hide=([^&]+)/.exec(location.search); // للاختبار: إخفاء أجزاء معينة لقياس أدائها
+  if (hq) document.addEventListener('DOMContentLoaded', function () { var st = document.createElement('style'); st.textContent = decodeURIComponent(hq[1]).split(',').map(function (x) { return x + '{visibility:hidden!important;animation:none!important}'; }).join(''); document.head.appendChild(st); });
   if (/[?&]only=ticker/.test(location.search)) document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('onlyticker'); });
   if (/[?&]fx=0/.test(location.search)) document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('nofx'); }); // للاختبار: بدون حركات زخرفية
 })();
