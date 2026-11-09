@@ -229,6 +229,7 @@
   body.lite .ann-img img.ann-poster { filter: none; }
   body.lite .hs-why.moving { -webkit-mask-image: none; mask-image: none; }
   body.lite .ann-text::before, body.lite .now-label::before { animation: none !important; }
+  body.nofx .bt-ic, body.nofx .spark, body.nofx .avatar, body.nofx .days.soon, body.nofx .per.now, body.nofx .news-tag, body.nofx .clock .colon { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
 
 
@@ -1956,6 +1957,7 @@ function normalize(v) {
   var q = /[?&]lite=([01])/.exec(location.search), lite = q ? q[1] === '1' : (/Android/i.test(navigator.userAgent) || !!window.fully);
   if (lite) document.documentElement.className += ' lite-html', document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('lite'); });
   if (lite && document.body) document.body.classList.add('lite');
+  if (/[?&]fx=0/.test(location.search)) document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('nofx'); }); // للاختبار: بدون حركات زخرفية
 })();
 function fit() {
   var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
