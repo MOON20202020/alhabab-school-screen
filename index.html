@@ -1880,7 +1880,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v22';
+var APP_VERSION = '2026-11-10-v23';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2196,15 +2196,19 @@ function renderNews() {
 function fillFrame(im, box) {
   // إذا شكل الصورة قريب من شكل البطاقة: تعبّي الإطار كامل. وإذا مختلف كثير: تنعرض كاملة والفراغ يتلون بلون الصورة نفسها
   var bw = box.clientWidth || 1, bh = box.clientHeight || 1, r = (im.naturalWidth / im.naturalHeight) / (bw / bh);
-  var cover = r > 0.78 && r < 1.28;
+  var cover = false; // الصورة تنعرض كاملة دائمًا بدون أي قص
   im.style.objectFit = cover ? 'cover' : 'contain';
   box.classList.toggle('cover', cover);
   if (!cover) {
     try {
-      var c = document.createElement('canvas'); c.width = c.height = 8; var x = c.getContext('2d');
-      x.drawImage(im, 0, 0, 8, 8); var d = x.getImageData(0, 0, 8, 8).data, R = 0, G = 0, B = 0;
-      for (var k = 0; k < d.length; k += 4) { R += d[k]; G += d[k + 1]; B += d[k + 2]; }
-      var n = d.length / 4; box.style.background = 'rgb(' + Math.round(R / n * .8) + ',' + Math.round(G / n * .8) + ',' + Math.round(B / n * .8) + ')';
+      // نلوّن الفراغ بلون أطراف الصورة نفسها (فوق وتحت للصور العريضة، يمين ويسار للطولية) عشان تبان مكمّلة لها
+      var N = 16, c = document.createElement('canvas'); c.width = c.height = N; var x = c.getContext('2d');
+      x.drawImage(im, 0, 0, N, N); var d = x.getImageData(0, 0, N, N).data, R = 0, G = 0, B = 0, n = 0, wide = r >= 1;
+      for (var a = 0; a < N; a++) for (var e = 0; e < 2; e++) {
+        var px = wide ? a : (e ? N - 1 : 0), py = wide ? (e ? N - 1 : 0) : a, k = (py * N + px) * 4;
+        R += d[k]; G += d[k + 1]; B += d[k + 2]; n++;
+      }
+      box.style.background = 'rgb(' + Math.round(R / n) + ',' + Math.round(G / n) + ',' + Math.round(B / n) + ')';
     } catch (e) { box.style.background = '#1E1B4B'; }
   }
 }
