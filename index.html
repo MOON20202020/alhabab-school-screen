@@ -1880,7 +1880,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v23';
+var APP_VERSION = '2026-11-10-v24';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2728,12 +2728,10 @@ function startTV() {
   setTimeout(function () { document.body.classList.add('ready'); }, 3000);
   setTimeout(function () { document.querySelectorAll('.per').forEach(function (p) { p.classList.add('settled'); }); tick._settled = true; }, 2200);
   setTimeout(function () { location.reload(); }, 6 * 3600 * 1000);
-  setInterval(function () { // تحديث تلقائي: إذا نزل إصدار جديد من الشاشة، تعيد تحميل نفسها
-    if (mode !== 'main') return;
-    fetch(location.pathname + '?ver=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (t) {
-      var m = t.match(/var APP_VERSION = '([^']+)'/); if (m && m[1] !== APP_VERSION) freshReload(m[1]);
-    }).catch(function () {});
-  }, 3 * 60 * 1000);
+  setInterval(function () { // تحديث تلقائي سريع: نشيك ملف صغير كل 20 ثانية، وإذا نزل إصدار جديد تعيد الشاشة تحميل نفسها
+    fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) { if (j && j.v && j.v !== APP_VERSION) freshReload(j.v); }).catch(function () {});
+  }, 20 * 1000);
   try { if (navigator.wakeLock) navigator.wakeLock.request('screen').catch(function () {}); } catch (e) {}
   if (!db) { // بدون إعداد: رسالة. بدون إنترنت وقت التشغيل: آخر محتوى محفوظ، ونعيد المحاولة بعد دقيقة
     if (!FIREBASE_CONFIG) el('demoTag').hidden = false;
@@ -2741,8 +2739,11 @@ function startTV() {
     return;
   }
   db.ref('.info/connected').on('value', function (s) { el('offline').hidden = s.val() === true; });
+  var reloadSeen = null;
   db.ref('screen').on('value', function (snap) {
     raw = snap.val() || DEFAULT;
+    var rq = raw.reloadAt || 0; // زر «حدّث الشاشة الآن» في لوحة التحكم
+    if (reloadSeen === null) reloadSeen = rq; else if (rq !== reloadSeen) { freshReload(String(rq)); return; }
     try { localStorage.setItem('school-screen-v2', JSON.stringify(raw)); } catch (e) {}
     data = normalize(raw);
     renderStatic();
@@ -3121,6 +3122,11 @@ var PANELS = {
   settings: function () {
     var s = Object.assign({}, DEFAULT.settings, current.settings || {});
     return h('div', {}, [
+      h('div', { class: 'card' }, [
+        h('h3', { text: 'تحديث الشاشة' }),
+        h('p', { class: 'hint', style: 'margin:0', text: 'الشاشة تحدّث نفسها لحالها خلال 20 ثانية من أي تحديث. وإذا تبيها تعيد التحميل الحين، اضغط الزر.' }),
+        h('button', { class: 'btn gold', type: 'button', text: '↻ حدّث الشاشة الآن', onclick: function () { ref('reloadAt').set(Date.now()).then(function () { toast('أرسلت التحديث، الشاشة بتعيد التحميل خلال ثواني'); }); } })
+      ]),
       h('div', { class: 'card' }, [
         h('h3', { text: 'المدرسة' }),
         field('اسم المدرسة', s.name, function (v) { save('settings/name', v); }),
