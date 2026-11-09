@@ -222,13 +222,13 @@
   .ann-text:not(.fade) h1, .ann-text:not(.fade) p { animation: pop .7s cubic-bezier(.16,1,.3,1) both; }
   .ann-text:not(.fade) p { animation-delay: .08s; }
   @keyframes pop { from { opacity: 0; transform: translateY(16px) scale(.98); } to { opacity: 1; transform: none; } }
-  /* وضع التلفاز: نخلي الحركة التفاعلية، بس نشيل الأشياء الثقيلة (التمويه) ونخلي كل حركة على معالج الرسومات */
-  body.lite .ann-img img.ann-bg { display: none; }
+  /* وضع التلفاز: نخلي الحركات الصغيرة المرحة، ونشيل الحركات الكبيرة اللي تثقل معالج الرسومات
+     (الدوائر الكبيرة، اللمعة اللي تمر على البطاقة كاملة، تكبير الصور، التمويه، والقناع) */
+  body.lite .blobs, body.lite .honor::after, body.lite .best::after, body.lite .ann-img img.ann-bg { display: none !important; }
+  body.lite .ann-img img { animation: none !important; }
   body.lite .ann-img img.ann-poster { filter: none; }
-  body.lite .blobs i, body.lite .avatar, body.lite .bt-ic, body.lite .spark, body.lite .days.soon, body.lite .per.now,
-  body.lite .news-tag, body.lite .ann-img img, body.lite .honor::after, body.lite .best::after,
-  body.lite .track, body.lite .ev-track, body.lite .hs-track { will-change: transform; backface-visibility: hidden; }
-  body.lite .blobs i:nth-child(n+3) { display: none; }
+  body.lite .hs-why.moving { -webkit-mask-image: none; mask-image: none; }
+  body.lite .ann-text::before, body.lite .now-label::before { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
 
 
@@ -1871,7 +1871,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-09-v19';
+var APP_VERSION = '2026-11-09-v20';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
