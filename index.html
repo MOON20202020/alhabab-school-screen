@@ -1963,9 +1963,12 @@ function normalize(v) {
   if (/[?&]only=ticker/.test(location.search)) document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('onlyticker'); });
   if (/[?&]fx=0/.test(location.search)) document.addEventListener('DOMContentLoaded', function () { document.body.classList.add('nofx'); }); // للاختبار: بدون حركات زخرفية
 })();
+var FIT_ZOOM = /[?&]zoom=1/.test(location.search);
+if (/[?&]vp=1920/.test(location.search)) { var vpm = document.querySelector('meta[name=viewport]'); if (vpm) vpm.setAttribute('content', 'width=1920, initial-scale=' + (screen.width / 1920)); }
 function fit() {
   var s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
   var st = el('stage');
+  if (FIT_ZOOM) { st.style.transform = 'none'; st.style.zoom = s; st.style.left = ((window.innerWidth - 1920 * s) / 2 / s) + 'px'; st.style.top = ((window.innerHeight - 1080 * s) / 2 / s) + 'px'; return; }
   st.style.transform = 'scale(' + s + ')';
   st.style.left = ((window.innerWidth - 1920 * s) / 2) + 'px';
   st.style.top = ((window.innerHeight - 1080 * s) / 2) + 'px';
