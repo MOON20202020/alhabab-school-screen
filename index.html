@@ -113,11 +113,16 @@
   .ann-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .ann-img { position: relative; }
   .ann-img img.ann-bg { position: absolute; inset: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; filter: blur(22px) saturate(1.2) brightness(.9); animation: none !important; }
-  .ann-img img.ann-poster { position: relative; object-fit: contain !important; animation: none !important; transform: none !important; filter: drop-shadow(0 8px 18px rgba(0,0,0,.25)); }
+  .ann-img.cover img.ann-poster { object-fit: cover !important; }
+  .ann-img img.ann-poster { position: relative; object-fit: contain; animation: none !important; transform: none !important; filter: drop-shadow(0 8px 18px rgba(0,0,0,.25)); }
   /* وضع البوستر: الصورة تاخذ البطاقة كلها */
-  .ann.poster { grid-template-columns: minmax(0, 1fr) !important; padding: 18px !important; }
+  .ann.poster { grid-template-columns: minmax(0, 1fr) !important; padding: 0 !important; overflow: hidden; }
+  .ann.poster { position: relative; }
+  .ann.poster .ann-img { position: absolute !important; inset: 0 !important; width: auto !important; height: auto !important; margin: 0 !important; }
+  .ann.poster .ann-img img.ann-poster { width: 100%; height: 100%; filter: none; }
+  .ann.poster .ann-img.cover img.ann-bg { display: none; }
   .ann.poster .ann-text { display: none !important; }
-  .ann.poster .ann-img { border-radius: 26px; }
+  .ann.poster .ann-img { border-radius: inherit; }
   .ann-text { min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 18px; transition: opacity .6s; }
   .ann-text::before { content: none; display: none; align-self: flex-start; padding: 6px 22px; border-radius: 999px; background: var(--c-orange); color: #fff; font-size: 24px; font-weight: 800; box-shadow: var(--clay-c); }
   .ann h1 { margin: 0; font-size: 62px; line-height: 1.2; font-weight: 800; color: var(--c-fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1875,7 +1880,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-09-v21';
+var APP_VERSION = '2026-11-10-v22';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2188,18 +2193,34 @@ function renderNews() {
   track.style.animation = 'tick ' + Math.max(15, (track.scrollWidth / 2) / 90) + 's linear infinite';
 }
 
+function fillFrame(im, box) {
+  // إذا شكل الصورة قريب من شكل البطاقة: تعبّي الإطار كامل. وإذا مختلف كثير: تنعرض كاملة والفراغ يتلون بلون الصورة نفسها
+  var bw = box.clientWidth || 1, bh = box.clientHeight || 1, r = (im.naturalWidth / im.naturalHeight) / (bw / bh);
+  var cover = r > 0.78 && r < 1.28;
+  im.style.objectFit = cover ? 'cover' : 'contain';
+  box.classList.toggle('cover', cover);
+  if (!cover) {
+    try {
+      var c = document.createElement('canvas'); c.width = c.height = 8; var x = c.getContext('2d');
+      x.drawImage(im, 0, 0, 8, 8); var d = x.getImageData(0, 0, 8, 8).data, R = 0, G = 0, B = 0;
+      for (var k = 0; k < d.length; k += 4) { R += d[k]; G += d[k + 1]; B += d[k + 2]; }
+      var n = d.length / 4; box.style.background = 'rgb(' + Math.round(R / n * .8) + ',' + Math.round(G / n * .8) + ',' + Math.round(B / n * .8) + ')';
+    } catch (e) { box.style.background = '#1E1B4B'; }
+  }
+}
 function showAnn(i, instant) {
   var a = data.ann[i] || data.ann[0]; if (!a) return;
   var txt = el('annText'), img = el('annImg');
   function apply() {
     el('annTitle').textContent = a.t; el('annBody').textContent = a.b || '';
     img.innerHTML = '';
-    if (a.img) { // الصورة تنعرض كاملة بدون قص، وخلفها نسخة مموّهة تعبّي الفراغ
+    if (a.img) { // أي صورة في الإعلانات تاخذ إطار البطاقة كامل
       var bg = new Image(); bg.src = a.img; bg.alt = ''; bg.className = 'ann-bg'; img.appendChild(bg);
-      var im = new Image(); im.src = a.img; im.alt = a.t || 'إعلان'; im.className = 'ann-poster'; img.appendChild(im);
-      img.style.display = '';
-      var poster = a.poster === true || (!a.t && !a.b);
-      el('ann').className = 'ann' + (poster ? ' poster' : '');
+      var im = new Image(); im.alt = a.t || 'إعلان'; im.className = 'ann-poster';
+      im.onload = function () { fillFrame(im, img); };
+      im.src = a.img; img.appendChild(im);
+      img.style.display = ''; img.style.background = '';
+      el('ann').className = 'ann poster';
     }
     else { img.style.display = 'none'; el('ann').className = 'ann noimg'; }
     var dots = el('dots'); dots.innerHTML = ''; var ds = parseInt(data.settings.annSeconds, 10); ds = ds > 2 ? ds : 12; dots.style.setProperty('--d', ds + 's');
@@ -2893,8 +2914,7 @@ var PANELS = {
       fields: function (it, p) { return [
         field('العنوان', it.t, function (v) { save(p + '/t', v); }),
         field('النص', it.b, function (v) { save(p + '/b', v); }, { multiline: true }),
-        imageField('صورة أو بوستر (اختياري)', it.img, function (v) { save(p + '/img', v); }, 2200),
-        toggle('اعرض الصورة كاملة كبوستر (بدون نص)', it.poster === true, function (v) { save(p + '/poster', v); }),
+        imageField('صورة أو بوستر (اختياري) — إذا حطيت صورة تاخذ الإعلان كامل', it.img, function (v) { save(p + '/img', v); }, 2200),
         toggle('يظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
       ]; }
     });
