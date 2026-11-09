@@ -230,6 +230,8 @@
   body.lite .hs-why.moving { -webkit-mask-image: none; mask-image: none; }
   body.lite .ann-text::before, body.lite .now-label::before { animation: none !important; }
   body.onlyticker #stage > :not(footer) { visibility: hidden !important; animation: none !important; }
+  body.lite .bt-ic, body.lite .spark, body.lite .avatar, body.lite .days.soon, body.lite .per.now, body.lite .news-tag, body.lite .clock .colon { animation: none !important; }
+  body.lite .spark { display: none; }
   body.nofx .bt-ic, body.nofx .spark, body.nofx .avatar, body.nofx .days.soon, body.nofx .per.now, body.nofx .news-tag, body.nofx .clock .colon { animation: none !important; }
   @media (prefers-reduced-motion: reduce) { .ann-text h1, .ann-text p { animation: none !important; } .per { transition: none; } }
 
@@ -1873,7 +1875,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-09-v20';
+var APP_VERSION = '2026-11-09-v21';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
