@@ -1885,7 +1885,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v25';
+var APP_VERSION = '2026-11-10-v26';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2807,13 +2807,40 @@ function resizeImage(file, max) {
     r.onerror = reject; r.readAsDataURL(file);
   });
 }
-function imageField(label, value, onSave, max) {
+// يجهّز صورة الإعلان على مقاس الإطار بالضبط: الصورة كاملة بدون قص، والفراغ تعبّيه نسخة مموّهة منها
+var FRAME_W = 1652, FRAME_H = 1188; // نفس نسبة إطار الإعلان على الشاشة (826×594)
+function fitToFrame(file) {
+  return new Promise(function (resolve, reject) {
+    var r = new FileReader();
+    r.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var W = FRAME_W, H = FRAME_H, iw = img.width, ih = img.height;
+        var c = document.createElement('canvas'); c.width = W; c.height = H; var g = c.getContext('2d');
+        g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+        // الخلفية: الصورة نفسها مكبّرة لين تعبّي الإطار، ومصغّرة جدًا ثم مكبّرة عشان تطلع مموّهة (يشتغل على كل الجوالات)
+        var sc = Math.max(W / iw, H / ih), sm = document.createElement('canvas'); sm.width = 48; sm.height = Math.round(48 * H / W);
+        var sg = sm.getContext('2d'); sg.imageSmoothingEnabled = true;
+        sg.drawImage(img, (W - iw * sc) / 2 * sm.width / W, (H - ih * sc) / 2 * sm.height / H, iw * sc * sm.width / W, ih * sc * sm.height / H);
+        g.drawImage(sm, 0, 0, W, H);
+        g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, W, H);
+        // الصورة الأصلية كاملة في النص
+        var s2 = Math.min(W / iw, H / ih), dw = iw * s2, dh = ih * s2;
+        g.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        resolve(c.toDataURL('image/jpeg', 0.86));
+      };
+      img.onerror = reject; img.src = r.result;
+    };
+    r.onerror = reject; r.readAsDataURL(file);
+  });
+}
+function imageField(label, value, onSave, max, fit) {
   var pv = h('div', { class: 'pv' }); var rm;
   function show(v) { pv.innerHTML = ''; if (v) pv.appendChild(h('img', { src: v, alt: '' })); else pv.textContent = 'بدون صورة'; if (rm) rm.hidden = !v; }
   var file = h('input', { type: 'file', accept: 'image/*', hidden: true });
   file.addEventListener('change', function () {
     var f = file.files[0]; if (!f) return; toast('جاري رفع الصورة…');
-    resizeImage(f, max || 1600).then(function (d) { show(d); onSave(d); }).catch(function () { toast('ما قدرت أقرأ الصورة'); });
+    (fit ? fitToFrame(f) : resizeImage(f, max || 1600)).then(function (d) { show(d); onSave(d); }).catch(function () { toast('ما قدرت أقرأ الصورة'); });
   });
   var pick = h('button', { class: 'btn ghost', type: 'button', text: 'اختيار صورة', onclick: function () { file.click(); } });
   rm = h('button', { class: 'btn del', type: 'button', text: 'إزالة', onclick: function () { show(''); onSave(''); } });
@@ -2924,7 +2951,7 @@ var PANELS = {
       fields: function (it, p) { return [
         field('العنوان', it.t, function (v) { save(p + '/t', v); }),
         field('النص', it.b, function (v) { save(p + '/b', v); }, { multiline: true }),
-        imageField('صورة أو بوستر (اختياري) — إذا حطيت صورة تاخذ الإعلان كامل', it.img, function (v) { save(p + '/img', v); }, 2200),
+        imageField('صورة أو بوستر (اختياري) — تتركّب على إطار الإعلان تلقائيًا بدون ما ينقص منها شي', it.img, function (v) { save(p + '/img', v); }, 2200, true),
         toggle('يظهر على الشاشة', it.show !== false, function (v) { save(p + '/show', v); })
       ]; }
     });
