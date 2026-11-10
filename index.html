@@ -1885,7 +1885,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v27';
+var APP_VERSION = '2026-11-10-v28';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -3238,6 +3238,12 @@ function paintStorage() {
   });
 }
 
+var SCHED_2026_11 = [
+  ['الطابور', '07:10', '07:25'], ['الأولى', '07:25', '08:05'], ['الثانية', '08:10', '08:50'],
+  ['الثالثة', '08:55', '09:35'], ['الرابعة', '09:40', '10:20'], ['الاستراحة', '10:20', '10:45'],
+  ['الخامسة', '10:45', '11:25'], ['السادسة', '11:30', '12:10'], ['السابعة', '12:15', '12:55'],
+  ['الثامنة', '13:00', '13:40']
+];
 function render() {
   return ref().once('value').then(function (snap) {
     current = snap.val() || {};
@@ -3253,6 +3259,18 @@ function render() {
       tabs.appendChild(h('button', { class: 'tab' + (t[0] === activeTab ? ' on' : ''), type: 'button', 'aria-pressed': t[0] === activeTab ? 'true' : 'false', text: t[1], onclick: function () { activeTab = t[0]; draw(); window.scrollTo(0, 0); } }));
     });
     var panel = el('panel'); panel.innerHTML = '';
+    // جدول الحصص الرسمي الجديد: يطلع تنبيه مرة وحدة، وبضغطة يتعتمد على الشاشة
+    var curS = JSON.stringify((current.sched || []).map(function (r) { return [r[1], r[2]]; })), newS = JSON.stringify(SCHED_2026_11.map(function (r) { return [r[1], r[2]]; }));
+    if (curS !== newS && current.schedAppliedV !== 'sched-2026-11') {
+      panel.appendChild(h('div', { class: 'card', style: 'border:3px solid var(--accent)' }, [
+        h('h3', { text: 'جدول الحصص الجديد جاهز' }),
+        h('p', { class: 'hint', style: 'margin:0', text: 'الطابور 7:10 · الحصة 1 من 7:25 · الاستراحة 10:20–10:45 · الحصة 8 تنتهي 1:40' }),
+        h('button', { class: 'btn gold', type: 'button', text: 'اعتمد الجدول الجديد على الشاشة', onclick: function () {
+          var v = SCHED_2026_11.map(function (r) { return r.slice(); });
+          Promise.all([ref('sched').set(v), ref('schedAppliedV').set('sched-2026-11')]).then(function () { current.sched = v; current.schedAppliedV = 'sched-2026-11'; toast('اتعتمد الجدول الجديد، والشاشة تحدّثت'); draw(); });
+        } })
+      ]));
+    }
     panel.appendChild(PANELS[activeTab]());
     window.scrollTo(0, y);
   }
