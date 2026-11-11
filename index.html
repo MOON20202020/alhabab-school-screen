@@ -295,14 +295,14 @@
   .side .events { display: flex; flex-direction: column; }
   .side .events #events { flex: 1; min-height: 0; }
   #events.few { display: flex; flex-direction: column; gap: 14px; height: 100%; }
-  .ev-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px;
+  .ev-hero { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px;
     border-radius: 26px; background: linear-gradient(160deg, #E0E7FF, #F5F3FF); padding: 14px 16px; }
   .ev-hero.soon { background: linear-gradient(160deg, #FFEDD5, #FEF3C7); }
   .evh-n { display: flex; align-items: baseline; gap: 10px; color: var(--c-primary); }
   .ev-hero.soon .evh-n { color: var(--c-orange); }
-  .evh-n b { font-size: 120px; line-height: 1; font-weight: 800; }
+  .evh-n b { font-size: 100px; line-height: 1; font-weight: 800; }
   .evh-n span { font-size: 34px; font-weight: 700; }
-  .evh-t { font-size: 34px; font-weight: 800; line-height: 1.25; color: var(--c-fg); }
+  .evh-t { font-size: 30px; font-weight: 800; line-height: 1.2; color: var(--c-fg); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .evh-s { font-size: 22px; font-weight: 600; color: var(--c-mfg); }
   .evh-next { flex-shrink: 0; }
   .ev-track.rolling .ev { animation: none !important; }
@@ -1908,7 +1908,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-11-v33';
+var APP_VERSION = '2026-11-11-v34';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
