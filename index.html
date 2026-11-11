@@ -1908,7 +1908,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-11-v34';
+var APP_VERSION = '2026-11-11-v35';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -1983,6 +1983,7 @@ function normalize(v) {
     news: vals(v.news).filter(function (n) { return n.show !== false && n.t; }).map(function (n) { return n.t; }),
     events: vals(v.events).filter(function (e) { return e.t; }),
     honor: v.honor || DEFAULT.honor,
+    students: [v.honor || {}].concat(Object.keys(v.honors || {}).sort().map(function (k) { return v.honors[k]; })).filter(function (x) { return x && x.name && String(x.name).trim(); }),
     teacher: v.teacher || {},
     sched: sched,
     media: vals(v.media).filter(function (m) { return m.url || m.img || m.file || (m.pages && m.pages.length); }),
@@ -2029,20 +2030,23 @@ function renderStatic() {
 }
 
 /* ---- التكريم: طالب الأسبوع ومعلم الأسبوع بالتناوب في نفس البطاقة ---- */
-var honorWho = 'student';
-function honorPair() {
-  var st = data.honor || {}, te = data.teacher || {};
-  return { st: st, te: te, both: !!(st.name && te.name) };
+var honorIdx = 0;
+function honorItems() { // كل طلاب الأسبوع، وبعدهم معلم الأسبوع، يتبادلون في نفس البطاقة
+  var list = (data.students || []).map(function (st) { return { t: false, h: st }; });
+  var te = data.teacher || {}; if (te.name) list.push({ t: true, h: te });
+  return list;
 }
 function paintHonor() {
-  var p = honorPair();
+  var items = honorItems();
   // ما فيه طالب ولا معلم: نخفي البطاقة بدل ما تطلع فاضية، والصف المثالي ياخذ مكانها
-  document.querySelector('.honor').classList.toggle('is-empty', !p.st.name && !p.te.name);
+  document.querySelector('.honor').classList.toggle('is-empty', !items.length);
   if (typeof fitBestName === 'function') requestAnimationFrame(fitBestName);
-  if (!p.both) honorWho = p.te.name && !p.st.name ? 'teacher' : 'student';
-  var t = honorWho === 'teacher', h = t ? p.te : p.st;
+  if (!items.length) return;
+  if (honorIdx >= items.length) honorIdx = 0;
+  var it = items[honorIdx], t = it.t, h = it.h;
+  var nSt = (data.students || []).length;
   var card = document.querySelector('.honor'); card.classList.toggle('t', t);
-  el('honorTitle').textContent = t ? 'معلم الأسبوع' : 'طالب الأسبوع';
+  el('honorTitle').textContent = t ? 'معلم الأسبوع' : (nSt > 1 ? 'طلاب الأسبوع · ' + (honorIdx + 1) + ' من ' + nSt : 'طالب الأسبوع');
   el('honorName').textContent = h.name || '—';
   paintHonorSub(t ? (h.subj ? 'معلم ' + h.subj : '') : (h.cls ? 'الصف ' + h.cls : ''), h.why || '');
   var av = el('avatar'); av.innerHTML = '';
@@ -2073,10 +2077,10 @@ function paintHonorSub(fix, why) { // سبب التكريم يتحرك داخل 
   setTimeout(fitWhy, 1500);
 }
 function rotateHonor() {
-  if (!honorPair().both || zoomEl) return;
+  if (honorItems().length < 2 || zoomEl) return;
   var card = document.querySelector('.honor');
   card.classList.add('swap');
-  setTimeout(function () { honorWho = honorWho === 'teacher' ? 'student' : 'teacher'; paintHonor(); card.classList.remove('swap'); }, 450);
+  setTimeout(function () { honorIdx = (honorIdx + 1) % honorItems().length; paintHonor(); card.classList.remove('swap'); }, 450);
 }
 
 var WISDOM = [
@@ -3129,14 +3133,29 @@ var PANELS = {
   honor: function () {
     var it = current.honor || {}, te = current.teacher || {};
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'يظهرون في الجهة اليسرى من الشاشة. إذا عبّيت الاثنين يتبادلون في نفس البطاقة كل 12 ثانية، وإذا تركت اسم المعلم فاضي يظهر الطالب بس.' }));
-    wrap.appendChild(h('div', { class: 'card' }, [
-      h('h3', { text: 'طالب الأسبوع' }),
-      field('اسم الطالب', it.name, function (v) { save('honor/name', v); }),
-      field('الصف', it.cls, function (v) { save('honor/cls', v); }, { ph: 'مثال: العاشر 1' }),
-      field('سبب التكريم', it.why, function (v) { save('honor/why', v); }),
-      imageField('صورة الطالب', it.img, function (v) { save('honor/img', v); }, 600)
-    ]));
+    wrap.appendChild(h('p', { class: 'hint', text: 'يظهرون في الجهة اليسرى من الشاشة، ويتبادلون في نفس البطاقة كل 12 ثانية: كل الطلاب واحد ورا الثاني، وبعدهم معلم الأسبوع. الطالب اللي اسمه فاضي ما يظهر.' }));
+    function stCard(title, base, st, onDel) {
+      var kids = [
+        h('div', { class: 'item-head' }, [h('h3', { text: title, style: 'margin:0' })].concat(onDel ? [h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: onDel })] : [])),
+        field('اسم الطالب', st.name, function (v) { save(base + '/name', v); }),
+        field('الصف', st.cls, function (v) { save(base + '/cls', v); }, { ph: 'مثال: العاشر 1' }),
+        field('سبب التكريم', st.why, function (v) { save(base + '/why', v); }),
+        imageField('صورة الطالب', st.img, function (v) { save(base + '/img', v); }, 600)
+      ];
+      return h('div', { class: 'card' }, kids);
+    }
+    wrap.appendChild(stCard('طالب الأسبوع 1', 'honor', it, null));
+    var extra = current.honors || {};
+    Object.keys(extra).sort().forEach(function (k, i) {
+      wrap.appendChild(stCard('طالب الأسبوع ' + (i + 2), 'honors/' + k, extra[k] || {}, function () {
+        if (!confirm('تحذف هذا الطالب من طلاب الأسبوع؟')) return;
+        ref('honors/' + k).remove().then(function () { delete current.honors[k]; toast('انحذف'); render(); });
+      }));
+    });
+    wrap.appendChild(h('button', { class: 'btn gold', type: 'button', text: '+ إضافة طالب آخر', style: 'width:100%;margin-bottom:16px', onclick: function () {
+      var k = ref('honors').push().key, v = { name: '', cls: '', why: '', img: '', at: Date.now() };
+      ref('honors/' + k).set(v).then(function () { current.honors = current.honors || {}; current.honors[k] = v; render(); });
+    } }));
     wrap.appendChild(h('div', { class: 'card' }, [
       h('h3', { text: 'معلم الأسبوع' }),
       field('اسم المعلم', te.name, function (v) { save('teacher/name', v.trim()); }),
