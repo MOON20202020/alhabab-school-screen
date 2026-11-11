@@ -1885,7 +1885,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-10-v28';
+var APP_VERSION = '2026-11-11-v29';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -1953,6 +1953,8 @@ function normalize(v) {
   if (!ann.length) ann = vals(DEFAULT.ann);
   var sched = (v.sched || []).filter(function (p) { return p && p[0] && toMin(p[1]) !== null && toMin(p[2]) !== null; });
   if (!sched.length) sched = DEFAULT.sched;
+  // الجدول الرسمي (نوفمبر 2026) يطبق على الشاشة لين أحد يعدّل الجدول من لوحة التحكم
+  if (v.schedAppliedV !== 'sched-2026-11' && v.schedAppliedV !== 'custom') sched = DEFAULT.sched;
   return {
     settings: st, ann: ann,
     news: vals(v.news).filter(function (n) { return n.show !== false && n.t; }).map(function (n) { return n.t; }),
@@ -3095,7 +3097,7 @@ var PANELS = {
     return wrap;
   },
   sched: function () {
-    var rows = (current.sched && current.sched.length ? current.sched : DEFAULT.sched).map(function (r) { return r.slice(); });
+    var rows = (current.schedAppliedV === 'custom' && current.sched && current.sched.length ? current.sched : DEFAULT.sched).map(function (r) { return r.slice(); });
     var auto = true, dirty = false;
     var wrap = h('div');
     wrap.appendChild(h('p', { class: 'hint', text: 'رتّب الحصص بالأسهم ↑ ↓. عند تفعيل «ضبط الأوقات تلقائيًا» تحافظ كل حصة على مدتها، وتُعاد الأوقات بالترتيب الجديد. بعد التعديل اضغط حفظ.' }));
@@ -3137,7 +3139,7 @@ var PANELS = {
     wrap.appendChild(list);
     var saveBtn = h('button', { class: 'btn gold full sc-save', type: 'button', text: 'حفظ الجدول', onclick: function () {
       var clean = rows.filter(function (r) { return r[0] && toMin(r[1]) !== null && toMin(r[2]) !== null; });
-      save('sched', clean).then(render);
+      Promise.all([save('sched', clean), ref('schedAppliedV').set('custom')]).then(render);
     } });
     wrap.appendChild(saveBtn);
     wrap.appendChild(h('button', { class: 'btn ghost full', type: 'button', text: 'ترتيب حسب الوقت', style: 'margin-top:8px', onclick: function () { rows.sort(function (x, y) { return toMin(x[1]) - toMin(y[1]); }); draw(); } }));
@@ -3261,7 +3263,7 @@ function render() {
     var panel = el('panel'); panel.innerHTML = '';
     // جدول الحصص الرسمي الجديد: يطلع تنبيه مرة وحدة، وبضغطة يتعتمد على الشاشة
     var curS = JSON.stringify((current.sched || []).map(function (r) { return [r[1], r[2]]; })), newS = JSON.stringify(SCHED_2026_11.map(function (r) { return [r[1], r[2]]; }));
-    if (curS !== newS && current.schedAppliedV !== 'sched-2026-11') {
+    if (false && curS !== newS) {
       panel.appendChild(h('div', { class: 'card', style: 'border:3px solid var(--accent)' }, [
         h('h3', { text: 'جدول الحصص الجديد جاهز' }),
         h('p', { class: 'hint', style: 'margin:0', text: 'الطابور 7:10 · الحصة 1 من 7:25 · الاستراحة 10:20–10:45 · الحصة 8 تنتهي 1:40' }),
