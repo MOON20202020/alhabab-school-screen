@@ -158,6 +158,14 @@
   .honor.t .honor-sub { color: #134E4A; }
   .honor.t .avatar { color: var(--c-teal); }
   .honor.t .hs-why { color: var(--c-teal); }
+  .honor.is-empty { display: none !important; }
+  /* لما تختفي بطاقة الطالب: الصف المثالي يكبر ويصير عمودي في النص */
+  aside:has(.honor.is-empty) .best { flex-direction: column !important; justify-content: center !important; text-align: center !important; gap: 18px !important; }
+  aside:has(.honor.is-empty) .best .bt-ic { width: 150px !important; height: 150px !important; }
+  aside:has(.honor.is-empty) .best .bt-tx { align-items: center !important; flex: 0 1 auto; width: 100%; }
+  aside:has(.honor.is-empty) .best .bt-t { font-size: 28px !important; }
+  aside:has(.honor.is-empty) .best .bt-bs { justify-content: center !important; flex-wrap: wrap !important; }
+  aside:has(.honor.is-empty) .best .bt-b { font-size: 22px !important; padding: 4px 16px !important; }
   .honor { height: 214px !important; box-sizing: border-box; grid-template-rows: auto auto !important; align-content: center; }
   .honor .avatar { align-self: center; }
   .honor .honor-info { justify-content: flex-start; overflow: hidden; }
@@ -284,6 +292,19 @@
   /* الفعاليات تتحرك للأعلى إذا زادت عن المساحة */
   #events { flex: 1; min-height: 0; overflow: hidden; position: relative; -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 calc(100% - 22px), transparent 100%); }
   .ev-track.rolling { animation: evroll linear infinite; }
+  .side .events { display: flex; flex-direction: column; }
+  .side .events #events { flex: 1; min-height: 0; }
+  #events.few { display: flex; flex-direction: column; gap: 14px; height: 100%; }
+  .ev-hero { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px;
+    border-radius: 26px; background: linear-gradient(160deg, #E0E7FF, #F5F3FF); padding: 14px 16px; }
+  .ev-hero.soon { background: linear-gradient(160deg, #FFEDD5, #FEF3C7); }
+  .evh-n { display: flex; align-items: baseline; gap: 10px; color: var(--c-primary); }
+  .ev-hero.soon .evh-n { color: var(--c-orange); }
+  .evh-n b { font-size: 120px; line-height: 1; font-weight: 800; }
+  .evh-n span { font-size: 34px; font-weight: 700; }
+  .evh-t { font-size: 34px; font-weight: 800; line-height: 1.25; color: var(--c-fg); }
+  .evh-s { font-size: 22px; font-weight: 600; color: var(--c-mfg); }
+  .evh-next { flex-shrink: 0; }
   .ev-track.rolling .ev { animation: none !important; }
   @keyframes evroll { from { transform: translate3d(0,0,0); } to { transform: translate3d(0,-50%,0); } }
   /* ================= الحركة والتفاعل ================= */
@@ -1887,7 +1908,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-11-v32';
+var APP_VERSION = '2026-11-11-v33';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2015,6 +2036,9 @@ function honorPair() {
 }
 function paintHonor() {
   var p = honorPair();
+  // ما فيه طالب ولا معلم: نخفي البطاقة بدل ما تطلع فاضية، والصف المثالي ياخذ مكانها
+  document.querySelector('.honor').classList.toggle('is-empty', !p.st.name && !p.te.name);
+  if (typeof fitBestName === 'function') requestAnimationFrame(fitBestName);
   if (!p.both) honorWho = p.te.name && !p.st.name ? 'teacher' : 'student';
   var t = honorWho === 'teacher', h = t ? p.te : p.st;
   var card = document.querySelector('.honor'); card.classList.toggle('t', t);
@@ -2117,7 +2141,8 @@ function renderBest() {
 function fitBestName() { // اسم الصف يصغر لين يدخل في سطر واحد داخل البطاقة
   var c = el('bestCls'); if (!c || !c.offsetParent) return;
   c.style.whiteSpace = 'nowrap'; c.style.webkitLineClamp = 'unset'; c.style.display = 'block';
-  for (var px = 40; px >= 20; px -= 1) { c.style.setProperty('font-size', px + 'px', 'important'); if (c.scrollWidth <= c.clientWidth + 1) return; }
+  var mx = (c.closest('.best') || c).clientHeight > 320 ? 64 : 40;
+  for (var px = mx; px >= 20; px -= 1) { c.style.setProperty('font-size', px + 'px', 'important'); if (c.scrollWidth <= c.clientWidth + 1) return; }
   c.style.whiteSpace = 'normal'; // أطول من كذا: سطرين بأصغر خط
 }
 var wisdomKey = '';
@@ -2182,6 +2207,22 @@ function renderEvents() {
     .filter(function (e) { return e.days !== null && e.days >= 0; })
     .sort(function (a, b) { return a.days - b.days; }).slice(0, 30);
   if (!list.length) { box.innerHTML = '<div class="empty">لا توجد فعاليات قادمة</div>'; return; }
+  box.classList.toggle('few', list.length <= 2);
+  if (list.length <= 2) { // فعالية أو ثنتين: عدّاد كبير يعبّي البطاقة بدل الفراغ
+    var f = list[0], hero = document.createElement('div'); hero.className = 'ev-hero' + (f.days <= 1 ? ' soon' : '');
+    var num = document.createElement('div'); num.className = 'evh-n';
+    num.innerHTML = f.days === 0 ? '<b>اليوم</b>' : f.days === 1 ? '<b>غدًا</b>' : '<b>' + ar(f.days) + '</b><span>' + (f.days <= 10 ? 'أيام' : 'يومًا') + '</span>';
+    var t = document.createElement('div'); t.className = 'evh-t'; t.textContent = f.t;
+    var sub = document.createElement('div'); sub.className = 'evh-s'; sub.textContent = f.s || (f.days > 1 ? 'باقي على موعدها' : '');
+    hero.appendChild(num); hero.appendChild(t); hero.appendChild(sub); box.appendChild(hero);
+    if (list.length === 2) {
+      var e2 = list[1], r2 = document.createElement('div'); r2.className = 'ev evh-next';
+      r2.innerHTML = '<div class="days"><b>' + (e2.days === 1 ? 'غدًا' : ar(e2.days)) + '</b>' + (e2.days > 1 ? '<span>' + (e2.days <= 10 ? 'أيام' : 'يومًا') + '</span>' : '') + '</div>';
+      var tx2 = document.createElement('div'); tx2.innerHTML = '<div class="ev-t"></div><div class="ev-s"></div>';
+      tx2.firstChild.textContent = e2.t; tx2.lastChild.textContent = e2.s; r2.appendChild(tx2); box.appendChild(r2);
+    }
+    return;
+  }
   var track = document.createElement('div'); track.className = 'ev-track'; box.appendChild(track);
   list.forEach(function (e) {
     var row = document.createElement('div'); row.className = 'ev';
