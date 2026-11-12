@@ -144,6 +144,30 @@
   .honor-name { font-size: 36px; font-weight: 800; line-height: 1.2; }
   .honor-sub { font-size: 22px; font-weight: 600; line-height: 1.4; color: #3F3A1C; }
   .honor { transition: background-color .45s ease, border-color .45s ease; }
+  /* طلاب الأسبوع كلهم مع بعض */
+  .honor-grp { display: none; }
+  .honor.grp { grid-template-columns: minmax(0, 1fr) !important; grid-template-rows: auto minmax(0, 1fr) !important; align-content: stretch !important; }
+  .honor.grp .avatar, .honor.grp .honor-info { display: none !important; }
+  .honor.grp .honor-title { grid-column: 1 !important; text-align: center; }
+  .honor.grp .honor-grp { display: grid; grid-column: 1; grid-row: 2; gap: 6px 14px; align-content: center; min-height: 0; overflow: hidden; }
+  .honor-grp.n2, .honor-grp.n3 { grid-template-columns: 1fr; }
+  .honor-grp.n4, .honor-grp.n5, .honor-grp.n6 { grid-template-columns: 1fr 1fr; }
+  .hg { display: flex; align-items: center; gap: 10px; min-width: 0; background: rgba(255,255,255,.55); border-radius: 18px; padding: 4px 10px 4px 6px; }
+  .hg-av { flex-shrink: 0; width: 40px; height: 40px; border-radius: 999px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--c-primary); overflow: hidden; }
+  .hg-av img { width: 100%; height: 100%; object-fit: cover; }
+  .hg-tx { min-width: 0; }
+  .hg-n { font-size: 22px; font-weight: 800; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--c-fg); }
+  .hg-s { font-size: 15px; font-weight: 600; line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #3F3A1C; }
+  .honor-grp.n2 .hg-av { width: 52px; height: 52px; font-size: 28px; }
+  .honor-grp.n2 .hg-n { font-size: 26px; }
+  .honor-grp.n3 { gap: 4px; }
+  .honor-grp.n3 .hg { padding: 2px 10px 2px 4px; }
+  .honor-grp.n3 .hg-av { width: 34px; height: 34px; font-size: 18px; }
+  .honor-grp.n3 .hg-n { font-size: 19px; line-height: 1.15; }
+  .honor-grp.n3 .hg-s { font-size: 13px; line-height: 1.15; }
+  .honor-grp.n4 .hg-s, .honor-grp.n5 .hg-s, .honor-grp.n6 .hg-s { display: none; }
+  .honor-grp.n4 .hg-n, .honor-grp.n5 .hg-n, .honor-grp.n6 .hg-n { font-size: 19px; }
+  .honor-grp.n5 .hg-av, .honor-grp.n6 .hg-av { width: 32px; height: 32px; font-size: 18px; }
   .honor-sub { display: flex !important; flex-direction: column; align-items: stretch; gap: 2px; white-space: nowrap; overflow: hidden; }
   .hs-why { flex: none !important; width: 100%; font-weight: 700; color: var(--c-primary-d); }
   .hs-fix { flex-shrink: 0; }
@@ -552,6 +576,7 @@
           <div class="honor-name" id="honorName"></div>
           <div class="honor-sub" id="honorSub"></div>
         </div>
+        <div class="honor-grp" id="honorGrp"></div>
       </section>
       <section class="wisdom">
         <i class="orn tl"></i><i class="orn tr"></i><i class="orn bl"></i><i class="orn br"></i>
@@ -1908,7 +1933,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-11-v35';
+var APP_VERSION = '2026-11-12-v36';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2031,8 +2056,9 @@ function renderStatic() {
 
 /* ---- التكريم: طالب الأسبوع ومعلم الأسبوع بالتناوب في نفس البطاقة ---- */
 var honorIdx = 0;
-function honorItems() { // كل طلاب الأسبوع، وبعدهم معلم الأسبوع، يتبادلون في نفس البطاقة
-  var list = (data.students || []).map(function (st) { return { t: false, h: st }; });
+function honorItems() { // طلاب الأسبوع كلهم مع بعض في شريحة وحدة، وبعدهم معلم الأسبوع
+  var sts = data.students || [];
+  var list = sts.length > 1 ? [{ t: false, grp: true, h: {} }] : sts.map(function (st) { return { t: false, h: st }; });
   var te = data.teacher || {}; if (te.name) list.push({ t: true, h: te });
   return list;
 }
@@ -2044,14 +2070,29 @@ function paintHonor() {
   if (!items.length) return;
   if (honorIdx >= items.length) honorIdx = 0;
   var it = items[honorIdx], t = it.t, h = it.h;
-  var nSt = (data.students || []).length;
-  var card = document.querySelector('.honor'); card.classList.toggle('t', t);
-  el('honorTitle').textContent = t ? 'معلم الأسبوع' : (nSt > 1 ? 'طلاب الأسبوع · ' + (honorIdx + 1) + ' من ' + nSt : 'طالب الأسبوع');
+  var card = document.querySelector('.honor'); card.classList.toggle('t', t); card.classList.toggle('grp', !!it.grp);
+  if (it.grp) { paintHonorGroup(); return; }
+  el('honorTitle').textContent = t ? 'معلم الأسبوع' : 'طالب الأسبوع';
   el('honorName').textContent = h.name || '—';
   paintHonorSub(t ? (h.subj ? 'معلم ' + h.subj : '') : (h.cls ? 'الصف ' + h.cls : ''), h.why || '');
   var av = el('avatar'); av.innerHTML = '';
   if (h.img) { var im = new Image(); im.src = h.img; im.alt = h.name || ''; av.appendChild(im); }
   else av.textContent = (h.name || (t ? 'م' : 'ط')).replace(/^\s*(أ\.|د\.|الأستاذ|الاستاذ|الأستاذة|أستاذ)\s*/, '').trim().charAt(0);
+}
+function paintHonorGroup() {
+  var sts = data.students || [], g = el('honorGrp'); g.innerHTML = '';
+  el('honorTitle').textContent = 'طلاب الأسبوع';
+  g.className = 'honor-grp n' + Math.min(sts.length, 6);
+  sts.slice(0, 6).forEach(function (st) {
+    var row = document.createElement('div'); row.className = 'hg';
+    var av = document.createElement('div'); av.className = 'hg-av';
+    if (st.img) { var im = new Image(); im.src = st.img; im.alt = st.name; av.appendChild(im); } else av.textContent = String(st.name).trim().charAt(0);
+    var tx = document.createElement('div'); tx.className = 'hg-tx';
+    var nm = document.createElement('div'); nm.className = 'hg-n'; nm.textContent = st.name;
+    var sb = document.createElement('div'); sb.className = 'hg-s'; sb.textContent = [st.cls ? 'الصف ' + st.cls : '', st.why || ''].filter(Boolean).join(' · ');
+    tx.appendChild(nm); if (sb.textContent) tx.appendChild(sb);
+    row.appendChild(av); row.appendChild(tx); g.appendChild(row);
+  });
 }
 function paintHonorSub(fix, why) { // سبب التكريم يتحرك داخل البطاقة إذا كان أطول من المساحة
   var sub = el('honorSub'); sub.innerHTML = '';
@@ -3133,7 +3174,7 @@ var PANELS = {
   honor: function () {
     var it = current.honor || {}, te = current.teacher || {};
     var wrap = h('div');
-    wrap.appendChild(h('p', { class: 'hint', text: 'يظهرون في الجهة اليسرى من الشاشة، ويتبادلون في نفس البطاقة كل 12 ثانية: كل الطلاب واحد ورا الثاني، وبعدهم معلم الأسبوع. الطالب اللي اسمه فاضي ما يظهر.' }));
+    wrap.appendChild(h('p', { class: 'hint', text: 'يظهرون في الجهة اليسرى من الشاشة. لما يكون فيه أكثر من طالب، يظهرون كلهم مع بعض في نفس البطاقة (لين 6 طلاب)، ويتبادلون كل 12 ثانية مع معلم الأسبوع. الطالب اللي اسمه فاضي ما يظهر.' }));
     function stCard(title, base, st, onDel) {
       var kids = [
         h('div', { class: 'item-head' }, [h('h3', { text: title, style: 'margin:0' })].concat(onDel ? [h('button', { class: 'btn del', type: 'button', text: 'حذف', onclick: onDel })] : [])),
