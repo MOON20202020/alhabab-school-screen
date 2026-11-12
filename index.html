@@ -1933,7 +1933,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-12-v36';
+var APP_VERSION = '2026-11-12-v37';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -3185,15 +3185,17 @@ var PANELS = {
       ];
       return h('div', { class: 'card' }, kids);
     }
-    wrap.appendChild(stCard('طالب الأسبوع 1', 'honor', it, null));
+    wrap.appendChild(h('h3', { text: 'طلاب هذا الأسبوع', style: 'margin:6px 4px 10px' }));
+    wrap.appendChild(stCard('الطالب الأول', 'honor', it, null));
     var extra = current.honors || {};
     Object.keys(extra).sort().forEach(function (k, i) {
-      wrap.appendChild(stCard('طالب الأسبوع ' + (i + 2), 'honors/' + k, extra[k] || {}, function () {
+      var ORDN = ['الثاني', 'الثالث', 'الرابع', 'الخامس', 'السادس', 'السابع', 'الثامن'];
+      wrap.appendChild(stCard('الطالب ' + (ORDN[i] || (i + 2)), 'honors/' + k, extra[k] || {}, function () {
         if (!confirm('تحذف هذا الطالب من طلاب الأسبوع؟')) return;
         ref('honors/' + k).remove().then(function () { delete current.honors[k]; toast('انحذف'); render(); });
       }));
     });
-    wrap.appendChild(h('button', { class: 'btn gold', type: 'button', text: '+ إضافة طالب آخر', style: 'width:100%;margin-bottom:16px', onclick: function () {
+    wrap.appendChild(h('button', { class: 'btn gold', type: 'button', text: '+ إضافة طالب آخر لنفس الأسبوع', style: 'width:100%;margin-bottom:16px', onclick: function () {
       var k = ref('honors').push().key, v = { name: '', cls: '', why: '', img: '', at: Date.now() };
       ref('honors/' + k).set(v).then(function () { current.honors = current.honors || {}; current.honors[k] = v; render(); });
     } }));
