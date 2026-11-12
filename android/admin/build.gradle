@@ -1,0 +1,9 @@
+plugins { id 'com.android.application' }
+android {
+  namespace 'om.alhabab.admin'
+  compileSdk 34
+  defaultConfig { applicationId 'om.alhabab.admin'; minSdk 21; targetSdk 34; versionCode 1; versionName '1.0' }
+  signingConfigs { rel { storeFile rootProject.file('alhabab.jks'); storePassword 'N4DjHMfM3x8f66qUfcGev9'; keyAlias 'alhabab'; keyPassword 'N4DjHMfM3x8f66qUfcGev9' } }
+  buildTypes { release { minifyEnabled false; signingConfig signingConfigs.rel } }
+  compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+}
