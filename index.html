@@ -483,6 +483,22 @@
   .badge.pin { background: var(--accent); color: var(--navy); font-weight: 700; }
   .now-card { background: #FEF3C7; }
   .btn.stop { background: var(--danger); color: #fff; }
+  /* لوحة التحكم على الآيباد: الأقسام كلها ظاهرة بدل التمرير */
+  @media (min-width: 700px) {
+    #admin { max-width: 780px; padding: 24px 24px 120px; }
+    .tabs { flex-wrap: wrap; overflow: visible; }
+  }
+  /* على الماك والشاشات العريضة: قائمة جانبية للأقسام، والبطاقات على عمودين */
+  @media (min-width: 1000px) {
+    #admin { max-width: 1320px; display: grid; grid-template-columns: 250px minmax(0, 1fr); column-gap: 28px; align-items: start; padding: 28px 32px 120px; }
+    #admin .a-top { grid-column: 1 / -1; }
+    .tabs { grid-column: 1; flex-direction: column; flex-wrap: nowrap; gap: 6px; position: sticky; top: 20px; padding: 0; background: transparent; }
+    .tabs .tab { width: 100%; text-align: right; justify-content: flex-start; padding: 12px 18px; }
+    #panel { grid-column: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(430px, 1fr)); gap: 16px 18px; align-items: start; }
+    #panel > div:not(.card) { display: contents; }
+    #panel .card { margin: 0 !important; }
+    #panel > *:not(.card), #panel > div:not(.card) > *:not(.card) { grid-column: 1 / -1; }
+  }
   .a-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
   .a-actions .btn { white-space: nowrap; }
   .live-card { box-shadow: inset 0 0 0 3px var(--accent); }
@@ -1933,7 +1949,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-12-v37';
+var APP_VERSION = '2026-11-12-v38';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
