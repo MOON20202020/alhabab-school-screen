@@ -502,6 +502,20 @@
   .a-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
   .a-actions .btn { white-space: nowrap; }
   .live-card { box-shadow: inset 0 0 0 3px var(--accent); }
+  /* حالة شاشة التلفاز أعلى لوحة التحكم */
+  .tv-stat { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 12px; }
+  .tvs { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 18px; padding: 14px 16px; box-shadow: inset 0 0 0 2px var(--line); }
+  .tvs .dot { width: 16px; height: 16px; border-radius: 999px; flex-shrink: 0; background: var(--muted); }
+  .tvs.on { box-shadow: inset 0 0 0 2px rgba(46,158,107,.45); background: #F0FAF5; }
+  .tvs.on .dot { background: var(--ok); box-shadow: 0 0 0 0 rgba(46,158,107,.5); animation: tvPulse 2s ease-out infinite; }
+  .tvs.off { box-shadow: inset 0 0 0 2px rgba(194,65,45,.45); background: #FDF2EF; }
+  .tvs.off .dot { background: var(--danger); }
+  .tvs b { display: block; font-size: 16px; }
+  .tvs.on b { color: #1F7A52; } .tvs.off b { color: var(--danger); }
+  .tvs span { display: block; font-size: 13px; color: var(--ink2); margin-top: 2px; }
+  @keyframes tvPulse { 0% { box-shadow: 0 0 0 0 rgba(46,158,107,.5); } 100% { box-shadow: 0 0 0 10px rgba(46,158,107,0); } }
+  @media (prefers-reduced-motion: reduce) { .tvs.on .dot { animation: none; } }
+  @media (min-width: 1000px) { #admin .tv-stat { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; } #admin .tvs { flex: 1 1 320px; } }
   .badge.lf { align-self: flex-start; font-weight: 600; }
   .badge.lf.ok { background: #DCFCE7; color: #166534; }
   .badge.lf.warn { background: #FEE2E2; color: #991B1B; }
@@ -653,6 +667,7 @@
         <button class="btn ghost" id="logoutBtn" type="button">خروج</button>
       </div>
     </div>
+    <div class="tv-stat" id="tvStat" role="status" aria-live="polite"></div>
     <nav class="tabs" id="tabs" aria-label="الأقسام"></nav>
     <div id="panel"></div>
   </div>
@@ -1949,7 +1964,7 @@ var FIREBASE_CONFIG = {
   appId: "..."
 };
 */
-var APP_VERSION = '2026-11-12-v38';
+var APP_VERSION = '2026-11-15-v39';
 var USER_DOMAIN = '@alhabab.screen'; // اسم المستخدم "admin" يصير admin@alhabab.screen داخل Firebase
 var UTC_OFFSET_HOURS = 4;   // توقيت عُمان
 var WEEKEND = [5, 6];       // الجمعة والسبت
@@ -2713,7 +2728,7 @@ function reportDevice() {
     est.catch(function () { return {}; }).then(function (e) {
       var files = {};
       Object.keys(localState).forEach(function (k) { var s = localState[k]; files[k] = { n: s.n || 0, got: s.got || 0, done: !!s.done, err: s.err || '' }; });
-      db.ref('device/' + DEV_ID).set({ name: devName(), w: screen.width + '×' + screen.height, at: firebase.database.ServerValue.TIMESTAMP, quota: e.quota || 0, usage: e.usage || 0, files: files }).catch(function () {});
+      db.ref('device/' + DEV_ID).set({ name: devName(), ver: APP_VERSION, w: screen.width + '×' + screen.height, at: firebase.database.ServerValue.TIMESTAMP, quota: e.quota || 0, usage: e.usage || 0, files: files }).catch(function () {});
     });
   }, 700);
 }
@@ -2868,7 +2883,13 @@ function startTV() {
     syncReady = true; syncLocal();
   });
   try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {}); } catch (e) {}
-  db.ref('.info/connected').on('value', function (s) { if (s.val() === true) reportDevice(); });
+  db.ref('.info/connected').on('value', function (s) {
+    if (s.val() !== true) return;
+    // لو انقطع التلفاز (انطفى أو فصل النت) السيرفر يسجّل وقت الانقطاع، ولوحة التحكم تعرف فورًا
+    db.ref('device/' + DEV_ID + '/off').onDisconnect().set(firebase.database.ServerValue.TIMESTAMP).catch(function () {});
+    reportDevice();
+  });
+  setInterval(reportDevice, 60 * 1000); // نبضة كل دقيقة: «الشاشة تعمل»
   setInterval(syncLocal, 5 * 60 * 1000);
 }
 
@@ -3300,10 +3321,51 @@ var PANELS = {
 var devices = {};
 function watchDevices() {
   if (watchDevices.on) return; watchDevices.on = true;
-  db.ref('device').on('value', function (snap) { devices = snap.val() || {}; cleanupCloud(); paintStorage(); }, function () { watchDevices.on = false; });
+  db.ref('device').on('value', function (snap) { devices = snap.val() || {}; cleanupCloud(); paintStorage(); paintTvStatus(); }, function () { watchDevices.on = false; });
+  db.ref('.info/serverTimeOffset').on('value', function (s) { srvOff = s.val() || 0; paintTvStatus(); });
+  setInterval(paintTvStatus, 15000);
 }
 function approvedIds() { return Object.keys((current && current.devices) || {}); }
 function fmtGB(b) { var g = b / 1073741824; return g >= 1 ? (Math.round(g * 10) / 10) + ' جيجا' : Math.round(b / 1048576) + ' ميجا'; }
+var srvOff = 0;
+function tvAgo(ms) {
+  var s = Math.max(0, Math.round(ms / 1000)), m = Math.round(s / 60);
+  return s < 60 ? 'قبل ' + Math.max(1, s) + ' ثانية' : m < 60 ? 'قبل ' + m + ' دقيقة' : m < 1440 ? 'قبل ' + Math.round(m / 60) + ' ساعة' : 'قبل ' + Math.round(m / 1440) + ' يوم';
+}
+function tvClock(t) {
+  var d = new Date(t), today = new Date(Date.now() + srvOff).toDateString() === d.toDateString();
+  var tm = d.toLocaleTimeString('ar-OM-u-nu-latn', { hour: 'numeric', minute: '2-digit' });
+  return today ? 'الساعة ' + tm : d.toLocaleDateString('ar-OM-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }) + ' ' + tm;
+}
+function paintTvStatus() {
+  var box = el('tvStat'); if (!box) return;
+  var now = Date.now() + srvOff, ap = (current && current.devices) || {};
+  var all = Object.keys(devices || {}).map(function (k) { return Object.assign({ id: k }, devices[k]); }).filter(function (d) { return d.at; });
+  var list = all.filter(function (d) { return ap[d.id]; });
+  if (!list.length) list = all.filter(function (d) { return /تلفاز/.test(d.name || ''); });
+  if (!list.length) list = all.filter(function (d) { return now - d.at < 7 * 86400000; });
+  list.sort(function (a, b) { return b.at - a.at; });
+  // الأجهزة القديمة اللي ما ظهرت من يوم ما نعرضها (إلا لو ما فيه غيرها)
+  list = list.filter(function (d, i) { return i === 0 || now - d.at < 86400000; }).slice(0, 3);
+  box.innerHTML = '';
+  if (!list.length) {
+    box.appendChild(h('div', { class: 'tvs' }, [h('i', { class: 'dot' }), h('div', {}, [h('b', { text: 'ما وصلت أي إشارة من شاشة التلفاز' }), h('span', { text: 'شغّل التلفاز وافتح تطبيق الشاشة، وبتظهر حالته هنا.' })])]));
+    return;
+  }
+  var many = list.length > 1;
+  list.forEach(function (d, i) {
+    var gone = d.off && d.off >= d.at, on = !gone && now - d.at < 150000;
+    var name = 'شاشة التلفاز' + (many ? ' ' + (i + 1) : '');
+    var since = gone ? d.off : d.at + 60000;
+    var line = on
+      ? 'آخر إشارة ' + tvAgo(now - d.at) + (d.ver && d.ver !== APP_VERSION ? ' · نسخة قديمة، اضغط «حدّث الشاشة»' : '')
+      : 'متوقفة من ' + tvClock(since) + ' (' + tvAgo(now - since) + '). تأكد إن التلفاز شغال ومتصل بالإنترنت.';
+    box.appendChild(h('div', { class: 'tvs ' + (on ? 'on' : 'off') }, [
+      h('i', { class: 'dot', 'aria-hidden': 'true' }),
+      h('div', {}, [h('b', { text: name + (on ? ' تعمل الآن' : ' متوقفة') }), h('span', { text: line })])
+    ]));
+  });
+}
 function ago(t) { var m = Math.round((Date.now() - (t || 0)) / 60000); return m < 2 ? 'متصلة الآن' : m < 60 ? 'آخر ظهور قبل ' + m + ' دقيقة' : m < 1440 ? 'آخر ظهور قبل ' + Math.round(m / 60) + ' ساعة' : 'آخر ظهور قبل ' + Math.round(m / 1440) + ' يوم'; }
 function cleanupCloud() { // كل الشاشات المعتمدة حفظت الفيديو؟ نمسح نسخته من السحابة عشان تبقى المساحة فاضية
   var ap = approvedIds(); if (!ap.length || !current.media) return;
